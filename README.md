@@ -30,7 +30,7 @@ The AI Care Analysis Website aims to help caregivers manage care records more ea
 - **Week 16**: Presentation and demonstration of results.
 
 ## Long-Term Goals & Development Direction
-We aim to develop this system towards a **software-driven model in North America**, leveraging **SaaS and AI to improve care efficiency** rather than relying solely on hardware solutions.
+We aim to develop this system towards a **software-driven model in North America**, leveraging **Web and AI to improve care efficiency** rather than relying solely on hardware solutions.
 
 ### **Challenges in Taiwan’s Long-Term Care Industry**
 - Shortage of workforce, high turnover rates, and heavy caregiving workload.
