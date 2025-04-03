@@ -1,43 +1,44 @@
-# AI樂齡照護網: HealthLLM
+# AI Elderly Care Network: HealthLLM
 
-## 專案介紹
-AI 照護分析網站旨在幫助照護人員更輕鬆地管理照護紀錄，並透過 AI 技術提供健康分析。
+## Project Introduction
+The AI Care Analysis Website aims to help caregivers manage care records more easily and provide health analysis through AI technology.
 
-### **解決的問題**
-1. **長者對自身健康狀況不了解**，難以有效傳達問題。
-2. **照護人員手動紀錄繁瑣**，缺乏系統化分析。
-3. **缺乏長期數據分析**，無法及時預測健康風險。
+### **Problems Addressed**
+1. **Elderly individuals lack awareness of their own health conditions**, making it difficult to communicate issues effectively.
+2. **Manual record-keeping for caregivers is tedious**, lacking systematic analysis.
+3. **Absence of long-term data analysis**, preventing timely health risk predictions.
 
-### **解決方案**
-- **AI 問答輔助** 照護人員記錄健康資訊。
-- **自動生成照護報告**，減少手動輸入負擔。
-- **健康趨勢分析**，幫助照護者提前發現異常狀況。
-- **智能問答**，提供個人化照護建議。
+### **Solutions**
+- **AI-assisted Q&A** helps caregivers record health information.
+- **Automated care reports** reduce manual data entry burdens.
+- **Health trend analysis** aids caregivers in identifying abnormalities in advance.
+- **Intelligent Q&A** provides personalized care recommendations.
 
-## 運作流程
-![AI prompts questions (e g , “How was the elder’s appetite today”) Caregiver inputs answers AI processes and recor](https://github.com/user-attachments/assets/682b4e83-586f-4a9e-8642-fed37e1f9849)
+## Workflow
+![AI prompts questions (e g , “How was the elder’s appetite today”) Caregiver inputs answers AI processes and records](https://github.com/user-attachments/assets/682b4e83-586f-4a9e-8642-fed37e1f9849)
 
-## 技術架構與開發時程
+## Technical Architecture & Development Timeline
 
-### **技術架構**
-- **後端**：Python + Flask，負責數據處理與 AI 分析。
-- **前端**：網頁介面，提供直覺的使用體驗。
-- **資料處理**：使用機器學習分析健康趨勢。
-- **RAG（Retrieval-Augmented Generation）**：結合長照指南，提供個人化建議。
+### **Technical Architecture**
+- **Backend**: Python + Flask for data processing and AI analysis.
+- **Frontend**: Web interface for an intuitive user experience.
+- **Data Processing**: Machine learning for health trend analysis.
+- **RAG (Retrieval-Augmented Generation)**: Integrating long-term care guidelines for personalized recommendations.
 
-### **開發時程**
-- **第 9 - 15 週**：系統開發與測試。
-- **第 16 週**：發表與展示成果。
+### **Development Timeline**
+- **Weeks 9 - 15**: System development and testing.
+- **Week 16**: Presentation and demonstration of results.
 
-## 長遠目標與發展方向
-我們希望這個系統能夠朝著 **北美的軟體導向發展**，運用 **SaaS 與 AI 提升照護效率**，而非僅依賴硬體設備。
+## Long-Term Goals & Development Direction
+We aim to develop this system towards a **software-driven model in North America**, leveraging **SaaS and AI to improve care efficiency** rather than relying solely on hardware solutions.
 
-### **台灣的長照挑戰**
-- 人力短缺，人才流動率高，照護工作負擔沉重。
+### **Challenges in Taiwan’s Long-Term Care Industry**
+- Shortage of workforce, high turnover rates, and heavy caregiving workload.
 
-### **我們的解決方案**
-✅ **軟體自動化**：簡化照護工作流程。
-✅ **數據驅動決策**：AI 輔助健康分析與風險預測。
-✅ **個性化 AI 互動**：提供即時且精準的照護建議。
+### **Our Solutions**
+✅ **Software Automation**: Simplifies caregiving workflows.
+✅ **Data-Driven Decision Making**: AI assists in health analysis and risk prediction.
+✅ **Personalized AI Interaction**: Provides real-time and precise care recommendations.
 
-這不只是減輕人力負擔，更是提升整體長照產業的效率與品質。
+This is not just about reducing manpower burden but also about enhancing the overall efficiency and quality of the long-term care industry.
+
