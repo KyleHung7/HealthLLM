@@ -37,7 +37,9 @@ We aim to develop this system towards a **software-driven model in North America
 
 ### **Our Solutions**
 ✅ **Software Automation**: Simplifies caregiving workflows.
+
 ✅ **Data-Driven Decision Making**: AI assists in health analysis and risk prediction.
+
 ✅ **Personalized AI Interaction**: Provides real-time and precise care recommendations.
 
 This is not just about reducing manpower burden but also about enhancing the overall efficiency and quality of the long-term care industry.
