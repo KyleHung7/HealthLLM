@@ -1,0 +1,5 @@
+__pycache__/
+.env
+*.pdf
+uploads/*
+!uploads/care_log.csv

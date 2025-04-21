@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 長照輔助系統</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+</head>
+<body>
+    <h1>🧠 AI 長照輔助系統</h1>
+
+    <div class="section">
+        <h2>📝 Step 1~3：健康摘要與報告產生</h2>
+        <form id="summary-form" enctype="multipart/form-data">
+            <label for="summary-file">📂 上傳照護紀錄（CSV）：</label>
+            <input type="file" id="summary-file" name="file" accept=".csv" required><br><br>
+            <button type="submit">📄 產出健康摘要與 PDF</button>
+        </form>
+        <div id="summary-status"></div>
+        <div id="summary-html"></div>
+        <div id="summary-pdf"></div>
+    </div>
+
+    <div class="section">
+        <h2>📈 Step 4：健康趨勢分析</h2>
+        <form id="trend-form" enctype="multipart/form-data">
+            <label for="trend-file">📂 上傳照護紀錄（CSV）：</label>
+            <input type="file" id="trend-file" name="file" accept=".csv" required><br><br>
+            <button type="submit">🔍 分析健康趨勢與警示</button>
+        </form>
+        <div id="trend-status"></div>
+        <div id="trend-output"></div>
+    </div>
+
+    <div class="section">
+        <h2>💬 Step 5：照護問題即時問答</h2>
+        <form id="question-form">
+            <label for="question">輸入照護問題 _
+
+System: 例如：長輩失眠怎麼辦？</label><br>
+            <textarea id="question" name="question" rows="2" cols="50"></textarea><br><br>
+            <button type="submit">💡 提出建議</button>
+        </form>
+        <div id="question-status"></div>
+        <div id="question-output"></div>
+    </div>
+
+    <script>
+        const socket = io();
+
+        socket.on('update', function(data) {
+            document.getElementById('summary-status').innerHTML += `<p>${data.message}</p>`;
+            document.getElementById('trend-status').innerHTML += `<p>${data.message}</p>`;
+            document.getElementById('question-status').innerHTML += `<p>${data.message}</p>`;
+        });
+
+        socket.on('summary_result', function(data) {
+            document.getElementById('summary-html').innerHTML = data.html_content;
+            if (data.pdf_url) {
+                document.getElementById('summary-pdf').innerHTML = `<a href="${data.pdf_url}" download>下載 PDF 報告</a>`;
+            }
+        });
+
+        socket.on('trend_result', function(data) {
+            document.getElementById('trend-output').innerHTML = data.trend_output.replace(/\n/g, '<br>');
+            if (data.trend_output.includes('mood_trend_')) {
+                const imgUrl = data.trend_output.match(/\/static\/moodtrend\/mood_trend_.*\.png/)[0];
+                document.getElementById('trend-output').innerHTML += `<br><img src="${imgUrl}" alt="Mood Trend">`;
+            }
+        });
+
+        socket.on('question_result', function(data) {
+            document.getElementById('question-output').innerHTML = data.answer.replace(/\n/g, '<br>');
+        });
+
+        document.getElementById('summary-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('summary-file').files[0]);
+            fetch('/upload_summary', {
+                method: 'POST',
+                body: formData
+            }).then(response => console.log('Summary upload started'));
+        });
+
+        document.getElementById('trend-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('file', document.getElementById('trend-file').files[0]);
+            fetch('/upload_trend', {
+                method: 'POST',
+                body: formData
+            }).then(response => console.log('Trend upload started'));
+        });
+
+        document.getElementById('question-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('question', document.getElementById('question').value);
+            fetch('/ask_question', {
+                method: 'POST',
+                body: formData
+            }).then(response => console.log('Question submitted'));
+        });
+    </script>
+</body>
+</html>
