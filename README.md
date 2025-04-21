@@ -1,7 +1,10 @@
 # AI Elderly Care Network: HealthLLM
 **Members** [@KyleHung7](https://github.com/KyleHung7) [@samko5sam](https://github.com/samko5sam) [@BlankTsai](https://github.com/BlankTsai)
 
-**Final Project Proposal Video** [https://youtu.be/FfFTi43dxN8](https://youtu.be/FfFTi43dxN8)
+**(1) Final Project Proposal Video** [https://youtu.be/FfFTi43dxN8](https://youtu.be/FfFTi43dxN8)
+
+**(2) Final Project Progress Report Video** [https://youtu.be/rVCsg0ngz98](https://youtu.be/rVCsg0ngz98)
+
 ## Project Introduction
 The AI Care Analysis Website aims to help caregivers manage care records more easily and provide health analysis through AI technology.
 
