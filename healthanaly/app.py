@@ -4,11 +4,16 @@ from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 from health_analysis import process_health_summary, health_trend_analysis, answer_care_question, default_prompt
 import threading
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['SECRET_KEY'] = 'your-secret-key'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY") or 'your-secret-key'
 socketio = SocketIO(app, async_mode='threading')
+socketio.init_app(app, cors_allowed_origins="*")
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
