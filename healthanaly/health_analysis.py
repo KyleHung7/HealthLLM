@@ -18,7 +18,9 @@ api_key = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=api_key)
 
 # Configure wkhtmltopdf
-WKHTMLTOPDF_PATH = "C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe"
+WKHTMLTOPDF_PATH = os.getenv("WKHTMLTOPDF_PATH")
+if not WKHTMLTOPDF_PATH:
+    raise EnvironmentError("WKHTMLTOPDF_PATH is not set or the file does not exist at the specified path.")
 config = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_PATH)
 
 # Prompts
