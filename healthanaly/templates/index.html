@@ -14,8 +14,6 @@
         <form id="summary-form" enctype="multipart/form-data">
             <label for="summary-file">📂 上傳照護紀錄（CSV）：</label>
             <input type="file" id="summary-file" name="file" accept=".csv" required><br><br>
-            <label for="prompt">分析指令：</label><br>
-            <textarea id="prompt" name="prompt" rows="8" cols="50"></textarea><br><br>
             <button type="submit">📄 產出健康摘要與 PDF</button>
         </form>
         <div id="summary-status"></div>
@@ -37,7 +35,9 @@
     <div class="section">
         <h2>💬 Step 5：照護問題即時問答</h2>
         <form id="question-form">
-            <label for="question">輸入照護問題，例如：長輩失眠怎麼辦？</label><br>
+            <label for="question">輸入照護問題 _
+
+System: 例如：長輩失眠怎麼辦？</label><br>
             <textarea id="question" name="question" rows="2" cols="50"></textarea><br><br>
             <button type="submit">💡 提出建議</button>
         </form>
@@ -77,7 +77,6 @@
             e.preventDefault();
             const formData = new FormData();
             formData.append('file', document.getElementById('summary-file').files[0]);
-            formData.append('prompt', document.getElementById('prompt').value);
             fetch('/upload_summary', {
                 method: 'POST',
                 body: formData

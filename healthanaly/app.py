@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
-from health_analysis import process_health_summary, health_trend_analysis, answer_care_question
+from health_analysis import process_health_summary, health_trend_analysis, answer_care_question, default_prompt
 import threading
 
 app = Flask(__name__)
@@ -12,9 +12,9 @@ socketio = SocketIO(app, async_mode='threading')
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-def background_task(file_path, prompt):
+def background_task(file_path):
     try:
-        html_content, pdf_path = process_health_summary(file_path, prompt)
+        html_content, pdf_path = process_health_summary(file_path, default_prompt)
         socketio.emit('update', {'message': '🟢 健康摘要生成完成'})
         socketio.emit('summary_result', {
             'html_content': html_content,
@@ -40,7 +40,6 @@ def upload_summary():
     if 'file' not in request.files:
         return 'No file part', 400
     file = request.files['file']
-    prompt = request.form.get('prompt', '')
     if file.filename == '':
         return 'No selected file', 400
     if file:
@@ -48,7 +47,7 @@ def upload_summary():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
         socketio.emit('update', {'message': '🟢 檔案上傳成功，開始生成健康摘要...'})
-        thread = threading.Thread(target=background_task, args=(file_path, prompt))
+        thread = threading.Thread(target=background_task, args=(file_path,))
         thread.start()
         return 'File uploaded and processing started.', 200
 
