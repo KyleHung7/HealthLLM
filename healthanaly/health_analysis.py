@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+import markdown
 
 # Configure matplotlib
 matplotlib.use('Agg')
@@ -209,9 +210,10 @@ def health_trend_analysis(file_path):
         content = df.to_csv(index=False)
         response = model.generate_content(f"{trend_prompt}\n\n{content}")
         trend_text = response.text.strip()
+        trend_html = markdown.markdown(trend_text)
 
         if plot_path:
-            return f"{trend_text}\n\n📊 {data_type}_trend 趨勢圖已生成"
+            return f"{trend_html}\n\n📊 {data_type}_trend 趨勢圖已生成<br><img style='width: 100%;' src='{plot_path}'/>"
         return f"{trend_text}\n\n⚠️ 未成功生成趨勢圖"
     except Exception as e:
         return f"趨勢分析錯誤: {str(e)}"
