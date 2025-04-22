@@ -1,0 +1,53 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background-color: #def7f6;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    backdrop-filter: blur(8px);
+}
+
+.navbar__links {
+    display: flex;
+    gap: 1rem;
+}
+
+.navbar__link {
+    color: #1a4d40;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.navbar__link:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.navbar__link--active {
+    background-color: rgba(255, 255, 255, 0.3);
+    font-weight: 500;
+}
+
+.navbar__user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.navbar__username {
+    color: #1a4d40;
+    font-weight: 500;
+}
+
+.navbar__link--logout {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.navbar__link--logout:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+}
