@@ -7,8 +7,9 @@ from dotenv import load_dotenv
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-from snownlp import SnowNLP
+import markdown
 
+# Configure matplotlib
 matplotlib.use('Agg')
 matplotlib.rc('font', family='Microsoft JhengHei')
 
@@ -20,19 +21,34 @@ genai.configure(api_key=api_key)
 # Configure wkhtmltopdf
 WKHTMLTOPDF_PATH = os.getenv("WKHTMLTOPDF_PATH")
 if not WKHTMLTOPDF_PATH:
-    raise EnvironmentError("WKHTMLTOPDF_PATH is not set or the file does not exist at the specified path.")
+    raise EnvironmentError("WKHTMLTOPDF_PATH is not set or the file does not exist.")
 config = pdfkit.configuration(wkhtmltopdf=WKHTMLTOPDF_PATH)
 
 # Prompts
-default_prompt = """
-你是一位長照輔助分析專家，請根據以下照護紀錄生成每日健康摘要，表格格式如下：
+blood_pressure_prompt = """
+你是一位長照輔助分析專家，請根據以下長者每日的血壓紀錄，提供簡潔的健康摘要與建議，並判斷是否達標。
 
-| 日期 | 日誌內容 | 食慾 | 睡眠狀況 | 行動能力 | 養護建議 |
-|------|---------|------|---------|---------|----------|
+請輸出下列表格格式：
+
+| 日期 | 早上收縮壓 (mmHg) | 早上舒張壓 (mmHg) | 早上脈搏 (次/分鐘) | 晚上收縮壓 (mmHg) | 晚上舒張壓 (mmHg) | 晚上脈搏 (次/分鐘) | 達標狀況 | 養護建議 |
+|------|-------------------|-------------------|---------------------|-------------------|-------------------|---------------------|-----------|----------|
+
+請依據常見血壓標準（正常收縮壓 <130 且舒張壓 <80）判斷是否達標。
+"""
+
+blood_sugar_prompt = """
+你是一位長照輔助分析專家，請根據以下長者每日的血糖紀錄，提供簡潔的健康摘要與建議，並判斷是否達標。
+
+請輸出下列表格格式：
+
+| 日期 | 早餐前血糖 | 早餐後2小時血糖 | 午餐前血糖 | 午餐後2小時血糖 | 晚餐前血糖 | 晚餐後2小時血糖 | 達標狀況 | 養護建議 |
+|------|------------|------------------|------------|------------------|------------|------------------|-----------|----------|
+
+請依據常見血糖標準（空腹血糖 <100 mg/dL，餐後兩小時 <140 mg/dL）判斷是否達標。
 """
 
 trend_prompt = """
-你是一位健康數據分析師，請根據以下照護紀錄分析「異常趨勢」，例如：血壓連日上升、睡眠不足、活動量下降等，並給出建議。
+你是一位健康數據分析師，請根據以下血壓或血糖紀錄，分析是否出現異常趨勢（如連續升高、波動劇烈等），並提供簡短建議。
 
 請輸出格式如下：
 - 🟡 指標變化：...
@@ -58,7 +74,7 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body>
-    <h2>每日健康摘要</h2>
+    <h2>{{ title }}</h2>
     <table>
         <thead>
             <tr>
@@ -90,93 +106,117 @@ def parse_markdown_table(markdown_text: str) -> pd.DataFrame:
     data = [[cell.strip() for cell in line.strip("|").split("|")] for line in table_lines[2:]]
     return pd.DataFrame(data, columns=headers)
 
-def generate_html(df: pd.DataFrame) -> str:
+def generate_html(df: pd.DataFrame, title="健康紀錄分析") -> str:
     template = Template(HTML_TEMPLATE)
-    return template.render(table=df)
+    return template.render(table=df, title=title)
 
-def generate_pdf_from_html(html_content: str) -> str:
-    pdf_filename = "static/health_summary.pdf"
+def generate_pdf_from_html(html_content: str, data_type: str) -> str:
+    pdf_filename = f"static/{data_type}_summary.pdf"
     os.makedirs(os.path.dirname(pdf_filename), exist_ok=True)
     pdfkit.from_string(html_content, pdf_filename, configuration=config)
     return pdf_filename
 
-def generate_mood_trend_plot(user_id, user_entries):
-    output_dir = "static/moodtrend"
-    os.makedirs(output_dir, exist_ok=True)
+def validate_bp_csv(df):
+    required_columns = [
+        '日期', '早上收縮壓 (mmHg)', '早上舒張壓 (mmHg)', '早上脈搏 (次/分鐘)',
+        '晚上收縮壓 (mmHg)', '晚上舒張壓 (mmHg)', '晚上脈搏 (次/分鐘)'
+    ]
+    # 忽略大小寫和空格進行驗證
+    df_columns = [col.strip().lower() for col in df.columns]
+    required_columns = [col.strip().lower() for col in required_columns]
+    return all(col in df_columns for col in required_columns)
 
-    # Convert date and sort
-    user_entries["日期"] = pd.to_datetime(user_entries["日期"])
-    user_entries = user_entries.sort_values("日期")
-    # Convert mood index to numeric
-    user_entries["心情指數"] = pd.to_numeric(user_entries.get("心情指數", 0), errors="coerce")
-    # Perform sentiment analysis on notes
-    user_entries["心情小語分析"] = user_entries["日誌內容"].apply(lambda text: SnowNLP(str(text)).sentiments * 9 + 1)
+def validate_sugar_csv(df):
+    required_columns = [
+        '日期', '早餐前血糖', '早餐後2小時血糖', '午餐前血糖',
+        '午餐後2小時血糖', '晚餐前血糖', '晚餐後2小時血糖'
+    ]
+    # 忽略大小寫和空格進行驗證
+    df_columns = [col.strip().lower() for col in df.columns]
+    required_columns = [col.strip().lower() for col in required_columns]
+    return all(col in df_columns for col in required_columns)
 
-    # Calculate averages
-    avg_recorded = user_entries["心情指數"].mean() if "心情指數" in user_entries else 0
-    avg_snownlp = user_entries["心情小語分析"].mean()
-
-    plt.figure(figsize=(12, 6))
-    if "心情指數" in user_entries and user_entries["心情指數"].notna().any():
-        sns.lineplot(x="日期", y="心情指數", data=user_entries, marker="o", label="用戶心情紀錄", color="blue", errorbar=None)
-    sns.lineplot(x="日期", y="心情小語分析", data=user_entries, marker="o", label="SnowNLP 心情分析", color="red", errorbar=None)
-    if avg_recorded:
-        plt.axhline(y=avg_recorded, color='orange', linestyle='--', label=f"記錄平均 ({avg_recorded:.2f})")
-    plt.axhline(y=avg_snownlp, color='green', linestyle='--', label=f"分析平均 ({avg_snownlp:.2f})")
-    plt.xlabel("日期")
-    plt.ylabel("心情指數")
-    plt.title(f"用戶 {user_id} 的心情趨勢圖")
-    plt.xticks(rotation=45)
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.ylim(1, 10)
-
-    output_path = os.path.join(output_dir, f"mood_trend_{user_id}.png")
-    plt.savefig(output_path)
-    plt.close()
-
-    return output_path
-
-def process_health_summary(file_path, prompt):
+def process_health_summary(df: pd.DataFrame, data_type: str) -> pd.DataFrame:
     model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
-    df = pd.read_csv(file_path)
-    block_size = 30
-    cumulative_response = ""
+    prompt = blood_pressure_prompt if data_type == 'blood_pressure' else blood_sugar_prompt
+    df = df.fillna("無")
+    content = df.to_csv(index=False)
+    response = model.generate_content(f"{prompt}\n\n{content}")
+    markdown = response.text.strip()
 
-    for i in range(0, df.shape[0], block_size):
-        block = df.iloc[i:i+block_size]
-        block_csv = block.to_csv(index=False)
-        full_prompt = f"照護紀錄如下：\n{block_csv}\n\n{prompt}"
-        response = model.generate_content(full_prompt)
-        cumulative_response += response.text.strip() + "\n\n"
+    summary_df = parse_markdown_table(markdown)
+    if summary_df is None:
+        raise ValueError("無法解析模型輸出的表格格式")
+    return summary_df
 
-    df_result = parse_markdown_table(cumulative_response)
-    if df_result is not None:
-        html_content = generate_html(df_result)
-        pdf_path = generate_pdf_from_html(html_content)
-        return html_content, pdf_path
-    else:
-        return "⚠️ 無法解析 AI 回應內容", None
+def generate_health_trend_plot(file_path, output_file, columns, ylabel, title):
+    try:
+        df = pd.read_csv(file_path)
+        df["日期"] = pd.to_datetime(df["日期"])
+        df = df.sort_values(by="日期")
+
+        plt.figure(figsize=(12, 6))
+        for col in columns:
+            if col in df.columns:
+                sns.lineplot(data=df, x="日期", y=col, label=col)
+
+        plt.title(title)
+        plt.ylabel(ylabel)
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(output_file)
+        plt.close()
+        return output_file
+    except Exception as e:
+        print(f"生成趨勢圖錯誤: {str(e)}")
+        return None
 
 def health_trend_analysis(file_path):
     if not os.path.exists(file_path):
         return "請先上傳 CSV 檔案"
 
-    model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
     df = pd.read_csv(file_path)
     user_id = os.path.splitext(os.path.basename(file_path))[0]
-    
-    # Generate mood trend plot
-    plot_path = generate_mood_trend_plot(user_id, df)
-    
-    # Perform trend analysis
-    content = df.to_csv(index=False)
-    response = model.generate_content(f"{trend_prompt}\n\n{content}")
-    trend_text = response.text.strip()
-    
-    # Combine results
-    return f"{trend_text}\n\n📊 心情趨勢圖已生成：/static/moodtrend/mood_trend_{user_id}.png"
+    df.fillna("無", inplace=True)
+
+    model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
+    plot_path = None
+    data_type = None
+
+    try:
+        if validate_bp_csv(df):
+            data_type = 'blood_pressure'
+            columns = ['早上收縮壓 (mmHg)', '早上舒張壓 (mmHg)', '晚上收縮壓 (mmHg)', '晚上舒張壓 (mmHg)']
+            plot_path = generate_health_trend_plot(
+                file_path,
+                f"static/moodtrend/bp_trend_{user_id}.png",
+                columns,
+                "mmHg",
+                "血壓趨勢圖"
+            )
+        elif validate_sugar_csv(df):
+            data_type = 'blood_sugar'
+            columns = ['早餐前血糖', '早餐後2小時血糖', '午餐前血糖', '午餐後2小時血糖', '晚餐前血糖', '晚餐後2小時血糖']
+            plot_path = generate_health_trend_plot(
+                file_path,
+                f"static/moodtrend/sugar_trend_{user_id}.png",
+                columns,
+                "mg/dL",
+                "血糖趨勢圖"
+            )
+        else:
+            return "CSV 檔案格式不符合血壓或血糖分析要求"
+
+        content = df.to_csv(index=False)
+        response = model.generate_content(f"{trend_prompt}\n\n{content}")
+        trend_text = response.text.strip()
+        trend_html = markdown.markdown(trend_text)
+
+        if plot_path:
+            return f"{trend_html}\n\n📊 {data_type}_trend 趨勢圖已生成<br><img style='width: 100%;' src='{plot_path}'/>"
+        return f"{trend_text}\n\n⚠️ 未成功生成趨勢圖"
+    except Exception as e:
+        return f"趨勢分析錯誤: {str(e)}"
 
 def answer_care_question(user_question):
     if not user_question.strip():
