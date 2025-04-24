@@ -110,11 +110,11 @@ def generate_html(df: pd.DataFrame, title="健康紀錄分析") -> str:
     template = Template(HTML_TEMPLATE)
     return template.render(table=df, title=title)
 
-def generate_pdf_from_html(html_content: str, data_type: str) -> str:
-    pdf_filename = f"static/{data_type}_summary.pdf"
-    os.makedirs(os.path.dirname(pdf_filename), exist_ok=True)
-    pdfkit.from_string(html_content, pdf_filename, configuration=config)
-    return pdf_filename
+def generate_pdf_from_html(html_content: str, pdf_filename: str) -> str:
+    pdf_path = f"static/{pdf_filename}"
+    os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+    pdfkit.from_string(html_content, pdf_path, configuration=config)
+    return pdf_path
 
 def validate_bp_csv(df):
     required_columns = [
@@ -171,12 +171,11 @@ def generate_health_trend_plot(file_path, output_file, columns, ylabel, title):
         print(f"生成趨勢圖錯誤: {str(e)}")
         return None
 
-def health_trend_analysis(file_path):
+def health_trend_analysis(file_path, user_id):
     if not os.path.exists(file_path):
         return "請先上傳 CSV 檔案"
 
     df = pd.read_csv(file_path)
-    user_id = os.path.splitext(os.path.basename(file_path))[0]
     df.fillna("無", inplace=True)
 
     model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")

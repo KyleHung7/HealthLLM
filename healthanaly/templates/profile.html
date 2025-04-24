@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>使用者個人資料 - AI 居家照護系統</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <!-- 字體與樣式 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/navbar.css') }}" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: #f0f4f8;
+            color: #333;
+            padding: 2rem;
+        }
+
+        header {
+            background: #a3d5d3;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            color: #064f40;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            max-width: 600px; /* Limit width for profile */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        h2 {
+            color: #2c7a7b;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .profile-info p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .profile-info strong {
+            color: #205e60;
+            margin-right: 0.5rem;
+        }
+
+        .login-section {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .login-section p {
+            margin-bottom: 1.5rem;
+        }
+
+        .login-btn {
+            padding: 0.7rem 1.5rem;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .login-btn:hover {
+            background-color: #3367D6;
+        }
+
+        .login-btn img {
+            margin-right: 0.5rem;
+            height: 1.5rem;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧠 AI 居家照護系統：HealthLLM</h1>
+        <p>用科技守護每個家庭的健康 💖</p>
+    </header>
+
+    {% include 'partials/navbar.html' %}
+
+    {% if current_user.is_authenticated %}
+    <div class="section">
+        <h2>👤 使用者個人資料</h2>
+        <div class="profile-info">
+            <p><strong>姓名：</strong> {{ current_user.name }}</p>
+            <p><strong>電子郵件：</strong> {{ current_user.email }}</p>
+            <!-- Add more profile details here if needed -->
+        </div>
+    </div>
+    {% else %}
+    <div class="section login-section">
+        <h2>請先登入系統</h2>
+        <p>您需要登入才能查看個人資料</p>
+        <a href="/auth/login" class="login-btn">
+            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" style="border-radius: 50%;">
+            使用 Google 帳號登入
+        </a>
+    </div>
+    {% endif %}
+
+</body>
+</html>
