@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime
 from lib import mdToHtml
 
 # Configure matplotlib
@@ -16,6 +17,7 @@ matplotlib.rc('font', family='Microsoft JhengHei')
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
+gemini_model = os.getenv("GEMINI_DEFAULT_MODEL", "gemini-2.5-pro-exp-03-25")
 genai.configure(api_key=api_key)
 
 # Configure wkhtmltopdf
@@ -110,8 +112,8 @@ def generate_html(df: pd.DataFrame, title="健康紀錄分析") -> str:
     template = Template(HTML_TEMPLATE)
     return template.render(table=df, title=title)
 
-def generate_pdf_from_html(html_content: str, pdf_filename: str) -> str:
-    pdf_path = f"static/{pdf_filename}"
+def generate_pdf_from_html(html_content: str, user_id: str, pdf_filename: str) -> str:
+    pdf_path = f"static/{user_id}/summary/{pdf_filename}"
     os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
     pdfkit.from_string(html_content, pdf_path, configuration=config)
     return pdf_path
@@ -137,7 +139,7 @@ def validate_sugar_csv(df):
     return all(col in df_columns for col in required_columns)
 
 def process_health_summary(df: pd.DataFrame, data_type: str) -> pd.DataFrame:
-    model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
+    model = genai.GenerativeModel(gemini_model)
     prompt = blood_pressure_prompt if data_type == 'blood_pressure' else blood_sugar_prompt
     df = df.fillna("無")
     content = df.to_csv(index=False)
@@ -150,6 +152,7 @@ def process_health_summary(df: pd.DataFrame, data_type: str) -> pd.DataFrame:
     return summary_df
 
 def generate_health_trend_plot(file_path, output_file, columns, ylabel, title):
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     try:
         df = pd.read_csv(file_path)
         df["日期"] = pd.to_datetime(df["日期"])
@@ -171,14 +174,15 @@ def generate_health_trend_plot(file_path, output_file, columns, ylabel, title):
         print(f"生成趨勢圖錯誤: {str(e)}")
         return None
 
-def health_trend_analysis(file_path, user_id):
+def health_trend_analysis(file_path, user_id, timestamp):
     if not os.path.exists(file_path):
         return "請先上傳 CSV 檔案"
 
     df = pd.read_csv(file_path)
     df.fillna("無", inplace=True)
 
-    model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
+    print(f"Using AI model {gemini_model}")
+    model = genai.GenerativeModel(gemini_model)
     plot_path = None
     data_type = None
 
@@ -188,7 +192,7 @@ def health_trend_analysis(file_path, user_id):
             columns = ['早上收縮壓 (mmHg)', '早上舒張壓 (mmHg)', '晚上收縮壓 (mmHg)', '晚上舒張壓 (mmHg)']
             plot_path = generate_health_trend_plot(
                 file_path,
-                f"static/moodtrend/bp_trend_{user_id}.png",
+                f"static/{user_id}/moodtrend/bp_trend_{timestamp}.png",
                 columns,
                 "mmHg",
                 "血壓趨勢圖"
@@ -198,7 +202,7 @@ def health_trend_analysis(file_path, user_id):
             columns = ['早餐前血糖', '早餐後2小時血糖', '午餐前血糖', '午餐後2小時血糖', '晚餐前血糖', '晚餐後2小時血糖']
             plot_path = generate_health_trend_plot(
                 file_path,
-                f"static/moodtrend/sugar_trend_{user_id}.png",
+                f"static/{user_id}/moodtrend/sugar_trend_{timestamp}.png",
                 columns,
                 "mg/dL",
                 "血糖趨勢圖"
@@ -220,7 +224,7 @@ def health_trend_analysis(file_path, user_id):
 def answer_care_question(user_question):
     if not user_question.strip():
         return "請輸入問題"
-    model = genai.GenerativeModel("gemini-2.5-pro-exp-03-25")
+    model = genai.GenerativeModel(gemini_model)
     prompt = rag_prompt_template.format(question=user_question.strip())
     response = model.generate_content(prompt)
     return response.text.strip()

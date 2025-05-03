@@ -1,7 +1,7 @@
 import os
 import threading
 import pandas as pd
-from flask import Flask, render_template, request, send_file, redirect, url_for, make_response
+from flask import Flask, render_template, request, send_file, make_response
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -64,13 +64,14 @@ def summary_background_task(file_path, data_type, user_id):
         html_content = generate_html(summary_df, f"{data_type.replace('_', ' ').title()} 健康紀錄分析")
         
         # 使用使用者 ID 來命名 PDF 檔案
-        pdf_filename = f"{data_type}_{user_id}_summary.pdf"
-        pdf_path = generate_pdf_from_html(html_content, pdf_filename)
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        pdf_filename = f"{data_type}_{timestamp}_summary.pdf"
+        generate_pdf_from_html(html_content, user_id, pdf_filename)
         
         socketio.emit('update', {'message': '🟢 健康摘要生成完成', 'event_type': 'summary'})
         socketio.emit('summary_result', {
             'html_content': html_content,
-            'pdf_url': f'/download_pdf/{pdf_filename}',
+            'pdf_url': f'/download_pdf/{user_id}/{data_type}/{timestamp}',
             'event_type': 'summary'
         })
     except Exception as e:
@@ -88,11 +89,12 @@ def trend_background_task(file_path, user_id):
             socketio.emit('update', {'message': '❌ CSV 檔案格式不符合血壓或血糖分析要求', 'event_type': 'trend'})
             return
 
-        result = health_trend_analysis(file_path, user_id)
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        result = health_trend_analysis(file_path, user_id, timestamp)
         socketio.emit('update', {'message': '🟢 趨勢分析完成', 'event_type': 'trend'})
         socketio.emit('trend_result', {
             'trend_output': result,
-            'trend_url': f'/download_trend/{user_id}/{data_type}',
+            'trend_url': f'/download_trend/{user_id}/{data_type}/{timestamp}',
             'event_type': 'trend'
         })
     except Exception as e:
@@ -148,10 +150,15 @@ def upload_trend():
     return '檔案已上傳並開始處理。', 200
 
 # Download PDF report
-@app.route('/download_pdf/<pdf_filename>')
+@app.route('/download_pdf/<user_id>/<data_type>/<timestamp>')
 @login_required
-def download_pdf(pdf_filename):
-    pdf_path = f"static/{pdf_filename}"
+def download_pdf(user_id, data_type, timestamp):
+    print(f"Download pdf: {current_user.id}")
+    # 確認使用者只能下載自己的文件
+    if current_user.id != user_id:
+        return '您沒有權限存取此檔案', 403
+    pdf_filename = f"{data_type}_{timestamp}_summary.pdf"
+    pdf_path = f"static/{user_id}/summary/{pdf_filename}"
     if os.path.exists(pdf_path):
         response = make_response(send_file(pdf_path, as_attachment=True, download_name=pdf_filename))
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
@@ -161,20 +168,19 @@ def download_pdf(pdf_filename):
     return 'PDF 文件不存在', 404
 
 # Download trend image
-@app.route('/download_trend/<user_id>/<data_type>')
+@app.route('/download_trend/<user_id>/<data_type>/<timestamp>')
 @login_required
-def download_trend(user_id, data_type):
-    print(f"Current userId: {current_user.id}")
+def download_trend(user_id, data_type, timestamp):
+    print(f"Download trend: {current_user.id}")
     # 確認使用者只能下載自己的文件
     if current_user.id != user_id:
         return '您沒有權限存取此檔案', 403
         
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     if data_type == 'blood_pressure':
-        image_path = f"static/moodtrend/bp_trend_{user_id}.png"
+        image_path = f"static/{user_id}/moodtrend/bp_trend_{timestamp}.png"
         download_name = f"bp_trend_{timestamp}.png"
     elif data_type == 'blood_sugar':
-        image_path = f"static/moodtrend/sugar_trend_{user_id}.png"
+        image_path = f"static/{user_id}/moodtrend/sugar_trend_{timestamp}.png"
         download_name = f"sugar_trend_{timestamp}.png"
     else:
         return '無效的趨勢圖型', 400
