@@ -177,10 +177,10 @@ def download_trend(user_id, data_type, timestamp):
         return '您沒有權限存取此檔案', 403
         
     if data_type == 'blood_pressure':
-        image_path = f"static/{user_id}/moodtrend/bp_trend_{timestamp}.png"
+        image_path = f"static/{user_id}/trend/bp_trend_{timestamp}.png"
         download_name = f"bp_trend_{timestamp}.png"
     elif data_type == 'blood_sugar':
-        image_path = f"static/{user_id}/moodtrend/sugar_trend_{timestamp}.png"
+        image_path = f"static/{user_id}/trend/sugar_trend_{timestamp}.png"
         download_name = f"sugar_trend_{timestamp}.png"
     else:
         return '無效的趨勢圖型', 400

@@ -192,7 +192,7 @@ def health_trend_analysis(file_path, user_id, timestamp):
             columns = ['早上收縮壓 (mmHg)', '早上舒張壓 (mmHg)', '晚上收縮壓 (mmHg)', '晚上舒張壓 (mmHg)']
             plot_path = generate_health_trend_plot(
                 file_path,
-                f"static/{user_id}/moodtrend/bp_trend_{timestamp}.png",
+                f"static/{user_id}/trend/bp_trend_{timestamp}.png",
                 columns,
                 "mmHg",
                 "血壓趨勢圖"
@@ -202,7 +202,7 @@ def health_trend_analysis(file_path, user_id, timestamp):
             columns = ['早餐前血糖', '早餐後2小時血糖', '午餐前血糖', '午餐後2小時血糖', '晚餐前血糖', '晚餐後2小時血糖']
             plot_path = generate_health_trend_plot(
                 file_path,
-                f"static/{user_id}/moodtrend/sugar_trend_{timestamp}.png",
+                f"static/{user_id}/trend/sugar_trend_{timestamp}.png",
                 columns,
                 "mg/dL",
                 "血糖趨勢圖"
