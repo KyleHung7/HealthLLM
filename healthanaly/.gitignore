@@ -3,4 +3,5 @@ __pycache__/
 *.pdf
 uploads/*
 !uploads/care_log.csv
+users/
 tmp/
