@@ -291,6 +291,8 @@
             }).then(response => response.text())
               .then(data => console.log('Question submitted'))
               .catch(error => {
+                //   console.log(error.message)
+                  if (error.message.toLowerCase() === 'failed to fetch') location.reload();
                   document.getElementById('question-status').innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
               });
         });

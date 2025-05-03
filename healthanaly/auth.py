@@ -1,8 +1,7 @@
 import os
-from flask import Flask, redirect, url_for, session, request, Blueprint, render_template, make_response
+from flask import redirect, url_for, session, Blueprint, render_template, make_response
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from authlib.integrations.flask_client import OAuth
-import json
 from werkzeug.utils import secure_filename
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -78,7 +77,7 @@ def callback():
         login_user(user)
         
         # 為使用者建立個人資料夾
-        user_folder = os.path.join('uploads', secure_filename(user.id))
+        user_folder = os.path.join('users', secure_filename(user.id))
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
         
@@ -109,7 +108,7 @@ def check_file_access(file_path):
     if not current_user.is_authenticated:
         return False
     
-    user_folder = os.path.join('uploads', secure_filename(current_user.id))
+    user_folder = os.path.join('users', secure_filename(current_user.id))
     return file_path.startswith(user_folder)
 
 # 取得使用者上傳資料夾路徑
@@ -117,7 +116,7 @@ def get_user_upload_folder():
     if not current_user.is_authenticated:
         return None
     
-    user_folder = os.path.join('uploads', secure_filename(current_user.id))
+    user_folder = os.path.join('users', secure_filename(current_user.id))
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     

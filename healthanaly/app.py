@@ -16,6 +16,8 @@ from health_analysis import (
     generate_pdf_from_html
 )
 from auth import init_auth, get_user_upload_folder
+from datetime import datetime
+from lib import mdToHtml
 
 # Load environment variables
 load_dotenv()
@@ -36,6 +38,13 @@ app.config['OAUTHLIB_INSECURE_TRANSPORT'] = True
 init_auth(app)
 
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
+
+logLess = False
+if logLess:
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    print(" * Running on http://127.0.0.1:5000")
 
 # Create upload and temporary folders
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -155,16 +164,18 @@ def download_pdf(pdf_filename):
 @app.route('/download_trend/<user_id>/<data_type>')
 @login_required
 def download_trend(user_id, data_type):
+    print(f"Current userId: {current_user.id}")
     # 確認使用者只能下載自己的文件
     if current_user.id != user_id:
         return '您沒有權限存取此檔案', 403
         
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     if data_type == 'blood_pressure':
         image_path = f"static/moodtrend/bp_trend_{user_id}.png"
-        download_name = f"bp_trend_{user_id}.png"
+        download_name = f"bp_trend_{timestamp}.png"
     elif data_type == 'blood_sugar':
         image_path = f"static/moodtrend/sugar_trend_{user_id}.png"
-        download_name = f"sugar_trend_{user_id}.png"
+        download_name = f"sugar_trend_{timestamp}.png"
     else:
         return '無效的趨勢圖型', 400
     
@@ -185,7 +196,8 @@ def ask_question():
         return '請輸入問題', 400
     try:
         answer = answer_care_question(question)
-        socketio.emit('question_result', {'answer': answer, 'event_type': 'question'})
+        answer_html = mdToHtml(answer)
+        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question'})
         return '問題已處理', 200
     except Exception as e:
         socketio.emit('update', {'message': f"❌ 問題回答錯誤: {str(e)}", 'event_type': 'question'})
