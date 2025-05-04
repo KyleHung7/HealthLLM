@@ -1,7 +1,9 @@
 import os
-from flask import redirect, url_for, session, Blueprint, render_template, make_response
+from flask import redirect, url_for, session, Blueprint, render_template, make_response, request
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from authlib.integrations.flask_client import OAuth
+import json
+from constants.default_settings import default
 from werkzeug.utils import secure_filename
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -96,12 +98,33 @@ def logout():
 @auth_bp.route('/profile')
 @login_required
 def profile():
-    response = make_response(render_template('profile.html'))
+    user_settings = load_user_settings(current_user.id)
+    ai_enabled = user_settings.get('ai_enabled', default("ai_enabled"))
+    email_report_enabled = user_settings.get('email_report_enabled', default('email_report_enabled'))
+    response = make_response(render_template('profile.html', ai_enabled=ai_enabled, email_report_enabled=email_report_enabled))
     # Add cache control headers to prevent caching
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '-1'
     return response
+
+@auth_bp.route('/save_ai_setting', methods=['POST'])
+@login_required
+def save_ai_setting():
+    ai_enabled = request.json.get('ai_enabled')
+    user_settings = load_user_settings(current_user.id)
+    user_settings['ai_enabled'] = ai_enabled
+    save_user_settings(current_user.id, user_settings)
+    return 'AI setting saved successfully', 200
+
+@auth_bp.route('/save_email_report_setting', methods=['POST'])
+@login_required
+def save_email_report_setting():
+    email_report_enabled = request.json.get('email_report_enabled')
+    user_settings = load_user_settings(current_user.id)
+    user_settings['email_report_enabled'] = email_report_enabled
+    save_user_settings(current_user.id, user_settings)
+    return 'Email report setting saved successfully', 200
 
 # 檢查使用者是否有權限存取檔案
 def check_file_access(file_path):
@@ -121,3 +144,19 @@ def get_user_upload_folder():
         os.makedirs(user_folder)
     
     return user_folder
+
+def load_user_settings(user_id):
+    user_folder = os.path.join('users', secure_filename(user_id))
+    settings_file = os.path.join(user_folder, 'settings.json')
+    try:
+        with open(settings_file, 'r') as f:
+            settings = json.load(f)
+            return settings
+    except FileNotFoundError:
+        return {}
+
+def save_user_settings(user_id, settings):
+    user_folder = os.path.join('users', secure_filename(user_id))
+    settings_file = os.path.join(user_folder, 'settings.json')
+    with open(settings_file, 'w') as f:
+        json.dump(settings, f)

@@ -95,6 +95,66 @@
             height: 1.5rem;
         }
 
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 60px;
+          height: 34px;
+        }
+
+        .switch input {
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #ccc;
+          -webkit-transition: .4s;
+          transition: .4s;
+        }
+
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 26px;
+          width: 26px;
+          left: 4px;
+          bottom: 4px;
+          background-color: white;
+          -webkit-transition: .4s;
+          transition: .4s;
+        }
+
+        input:checked + .slider {
+          background-color: #2196F3;
+        }
+
+        input:focus + .slider {
+          box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+          -webkit-transform: translateX(26px);
+          -ms-transform: translateX(26px);
+          transform: translateX(26px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+          border-radius: 34px;
+        }
+
+        .slider.round:before {
+          border-radius: 50%;
+        }
+
     </style>
 </head>
 <body>
@@ -111,6 +171,20 @@
         <div class="profile-info">
             <p><strong>姓名：</strong> {{ current_user.name }}</p>
             <p><strong>電子郵件：</strong> {{ current_user.email }}</p>
+            <p>
+                <strong>啟用自動 AI 功能：</strong>
+                <label class="switch">
+                    <input type="checkbox" id="ai_enabled" {% if ai_enabled %}checked{% endif %}>
+                    <span class="slider round"></span>
+                </label>
+            </p>
+            <p>
+                <strong>啟用郵件報告：</strong>
+                <label class="switch">
+                    <input type="checkbox" id="email_report_enabled" {% if email_report_enabled %}checked{% endif %}>
+                    <span class="slider round"></span>
+                </label>
+            </p>
             <!-- Add more profile details here if needed -->
         </div>
     </div>
@@ -125,5 +199,52 @@
     </div>
     {% endif %}
 
+    <script>
+        const aiEnabledCheckbox = document.getElementById('ai_enabled');
+
+        aiEnabledCheckbox.addEventListener('change', function() {
+            const aiEnabled = this.checked;
+
+            fetch('/auth/save_ai_setting', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ai_enabled: aiEnabled })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                console.log('AI setting saved successfully');
+            })
+            .catch(error => {
+                console.error('There was an error saving the AI setting:', error);
+            });
+        });
+
+        const emailReportEnabledCheckbox = document.getElementById('email_report_enabled');
+
+        emailReportEnabledCheckbox.addEventListener('change', function() {
+            const emailReportEnabled = this.checked;
+
+            fetch('/auth/save_email_report_setting', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email_report_enabled: emailReportEnabled })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                console.log('Email report setting saved successfully');
+            })
+            .catch(error => {
+                console.error('There was an error saving the email report setting:', error);
+            });
+        });
+    </script>
 </body>
 </html>
