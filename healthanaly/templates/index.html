@@ -140,6 +140,9 @@
 
     {% include 'partials/navbar.html' %}
     
+    <!-- Store authentication status in a hidden input -->
+    <input type="hidden" id="auth-status" value="{{ current_user.is_authenticated }}">
+
     {% if current_user.is_authenticated %}
     <div class="welcome-banner">
         <h3>歡迎回來，{{ current_user.name }}！</h3>
@@ -210,93 +213,99 @@
     {% endif %}
 
     <script>
-        {% if current_user.is_authenticated %}
-        const socket = io();
+        // Read authentication status from hidden input
+        const isAuthenticated = document.getElementById('auth-status').value === 'True';
 
-        // Handle update messages
-        socket.on('update', function(data) {
-            const statusDiv = data.event_type === 'summary' ? 'summary-status' :
-                             data.event_type === 'trend' ? 'trend-status' :
-                             'question-status';
-            const statusClass = data.message.includes('❌') ? 'status-error' : 'status-success';
-            document.getElementById(statusDiv).innerHTML += `<p class="${statusClass}">${data.message}</p>`;
-            document.getElementById(statusDiv).scrollTop = document.getElementById(statusDiv).scrollHeight;
-        });
+        if (isAuthenticated) {
+            const socket = io();
 
-        // Handle summary result
-        socket.on('summary_result', function(data) {
-            if (data.event_type === 'summary') {
-                document.getElementById('summary-html').innerHTML = data.html_content;
-                if (data.pdf_url) {
-                    document.getElementById('summary-pdf').innerHTML = `<a href="${data.pdf_url}" class="download-btn">📥 下載 PDF 報告</a>`;
+            // Handle update messages
+            socket.on('update', function(data) {
+                const statusDiv = data.event_type === 'summary' ? 'summary-status' :
+                                 data.event_type === 'trend' ? 'trend-status' :
+                                 'question-status';
+                const statusClass = data.message.includes('❌') ? 'status-error' : 'status-success';
+                const statusElement = document.getElementById(statusDiv);
+                statusElement.innerHTML += `<p class="${statusClass}">${data.message}</p>`;
+                statusElement.scrollTop = statusElement.scrollHeight;
+            });
+
+            // Handle summary result
+            socket.on('summary_result', function(data) {
+                if (data.event_type === 'summary') {
+                    document.getElementById('summary-html').innerHTML = data.html_content;
+                    if (data.pdf_url) {
+                        document.getElementById('summary-pdf').innerHTML = `<a href="${data.pdf_url}" class="download-btn">📥 下載 PDF 報告</a>`;
+                    }
                 }
-            }
-        });
+            });
 
-        // Handle trend result
-        socket.on('trend_result', function(data) {
-            if (data.event_type === 'trend') {
-                document.getElementById('trend-output').innerHTML = data.trend_output.replace(/\n/g, '<br>');
-                if (data.trend_url) {
-                    document.getElementById('trend-download').innerHTML = `<a href="${data.trend_url}" class="download-btn">📊 下載趨勢圖</a>`;
+            // Handle trend result
+            socket.on('trend_result', function(data) {
+                if (data.event_type === 'trend') {
+                    document.getElementById('trend-output').innerHTML = data.trend_output.replace(/\n/g, '<br>');
+                    if (data.trend_url) {
+                        document.getElementById('trend-download').innerHTML = `<a href="${data.trend_url}" class="download-btn">📊 下載趨勢圖</a>`;
+                    }
                 }
-            }
-        });
+            });
 
-        // Handle question result
-        socket.on('question_result', function(data) {
-            if (data.event_type === 'question') {
-                document.getElementById('question-output').innerHTML = data.answer.replace(/\n/g, '<br>');
-            }
-        });
+            // Handle question result
+            socket.on('question_result', function(data) {
+                if (data.event_type === 'question') {
+                    document.getElementById('question-output').innerHTML = data.answer.replace(/\n/g, '<br>');
+                }
+            });
 
-        // Summary form submission
-        document.getElementById('summary-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('file', document.getElementById('summary-file').files[0]);
-            fetch('/upload_summary', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text())
-              .then(data => console.log('Summary upload started'))
-              .catch(error => {
-                  document.getElementById('summary-status').innerHTML += `<p class="status-error">❌ 上傳失敗: ${error}</p>`;
-              });
-        });
+            // Summary form submission
+            document.getElementById('summary-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                formData.append('file', document.getElementById('summary-file').files[0]);
+                fetch('/upload_summary', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(data => console.log('Summary upload started'))
+                    .catch(error => {
+                        document.getElementById('summary-status').innerHTML += `<p class="status-error">❌ 上傳失敗: ${error}</p>`;
+                    });
+            });
 
-        // Trend form submission
-        document.getElementById('trend-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('file', document.getElementById('trend-file').files[0]);
-            fetch('/upload_trend', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text())
-              .then(data => console.log('Trend upload started'))
-              .catch(error => {
-                  document.getElementById('trend-status').innerHTML += `<p class="status-error">❌ 上傳失敗: ${error}</p>`;
-              });
-        });
+            // Trend form submission
+            document.getElementById('trend-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                formData.append('file', document.getElementById('trend-file').files[0]);
+                fetch('/upload_trend', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(data => console.log('Trend upload started'))
+                    .catch(error => {
+                        document.getElementById('trend-status').innerHTML += `<p class="status-error">❌ 上傳失敗: ${error}</p>`;
+                    });
+            });
 
-        // Question form submission
-        document.getElementById('question-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('question', document.getElementById('question').value);
-            fetch('/ask_question', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text())
-              .then(data => console.log('Question submitted'))
-              .catch(error => {
-                //   console.log(error.message)
-                  if (error.message.toLowerCase() === 'failed to fetch') location.reload();
-                  document.getElementById('question-status').innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
-              });
-        });
-        {% endif %}
+            // Question form submission
+            document.getElementById('question-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                formData.append('question', document.getElementById('question').value);
+                fetch('/ask_question', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(data => console.log('Question submitted'))
+                    .catch(error => {
+                        document.getElementById('question-status').innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
+                    });
+            });
+        }
     </script>
 </body>
 </html>
+
