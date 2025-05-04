@@ -7,8 +7,7 @@ from dotenv import load_dotenv
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
-from datetime import datetime
-from lib import mdToHtml
+from lib import mdToHtml, clear_user_data_folder
 
 # Configure matplotlib
 matplotlib.use('Agg')
@@ -115,6 +114,7 @@ def generate_html(df: pd.DataFrame, title="健康紀錄分析") -> str:
 def generate_pdf_from_html(html_content: str, user_id: str, pdf_filename: str) -> str:
     pdf_path = f"static/{user_id}/summary/{pdf_filename}"
     os.makedirs(os.path.dirname(pdf_path), exist_ok=True)
+    clear_user_data_folder(user_id, "summary")
     pdfkit.from_string(html_content, pdf_path, configuration=config)
     return pdf_path
 

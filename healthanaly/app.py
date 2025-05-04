@@ -17,7 +17,7 @@ from health_analysis import (
 )
 from auth import init_auth, get_user_upload_folder
 from datetime import datetime
-from lib import mdToHtml
+from lib import mdToHtml, clear_user_data_folder
 
 # Load environment variables
 load_dotenv()
@@ -90,6 +90,7 @@ def trend_background_task(file_path, user_id):
             return
 
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        clear_user_data_folder(user_id, "trend")
         result = health_trend_analysis(file_path, user_id, timestamp)
         socketio.emit('update', {'message': '🟢 趨勢分析完成', 'event_type': 'trend'})
         socketio.emit('trend_result', {
