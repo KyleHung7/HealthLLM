@@ -155,6 +155,12 @@
           border-radius: 50%;
         }
 
+        .onboarding-btn {
+            display: block;
+            margin: 15px auto;
+            text-align: center;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -186,6 +192,12 @@
                 </label>
             </p>
             <!-- Add more profile details here if needed -->
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="{{ url_for('onboarding') }}" class="btn btn-outline-secondary btn-sm onboarding-btn">
+                重新設定角色
+            </a>
         </div>
     </div>
     {% else %}

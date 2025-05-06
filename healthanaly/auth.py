@@ -126,6 +126,18 @@ def save_email_report_setting():
     save_user_settings(current_user.id, user_settings)
     return 'Email report setting saved successfully', 200
 
+@auth_bp.route('/save_account_role', methods=['POST'])
+@login_required
+def save_account_role():
+    account_role = request.json.get('account_role')
+    if account_role not in ['elderly', 'general']:
+        return 'Invalid account role', 400
+        
+    user_settings = load_user_settings(current_user.id)
+    user_settings['account_role'] = account_role
+    save_user_settings(current_user.id, user_settings)
+    return 'Account role saved successfully', 200
+
 # 檢查使用者是否有權限存取檔案
 def check_file_access(file_path):
     if not current_user.is_authenticated:

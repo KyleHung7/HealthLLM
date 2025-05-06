@@ -1,7 +1,7 @@
 import os
 import threading
 import pandas as pd
-from flask import Flask, render_template, request, send_file, make_response
+from flask import Flask, render_template, request, send_file, make_response, jsonify, redirect, url_for
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -15,7 +15,7 @@ from health_analysis import (
     generate_html,
     generate_pdf_from_html
 )
-from auth import init_auth, get_user_upload_folder
+from auth import init_auth, get_user_upload_folder, load_user_settings, save_user_settings
 from datetime import datetime
 from lib import mdToHtml, clear_user_data_folder
 
@@ -50,9 +50,29 @@ if logLess:
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['TMP_FOLDER'], exist_ok=True)
 
+# Onboarding page
+@app.route('/onboarding')
+@login_required
+def onboarding():
+    response = make_response(render_template('onboarding.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
 # Home page
 @app.route('/')
 def index():
+    if current_user.is_authenticated:
+        user_settings = load_user_settings(current_user.id)
+        account_role = user_settings.get('account_role')
+        
+        # Redirect to onboarding if account_role is not set
+        if not account_role:
+            return redirect(url_for('onboarding'))
+        
+        if account_role == 'elderly':
+            return render_template('elderly_index.html')
     return render_template('index.html')
 
 # Background task for health summary
