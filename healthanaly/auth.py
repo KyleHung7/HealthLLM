@@ -82,6 +82,11 @@ def callback():
         user_folder = os.path.join('users', secure_filename(user.id))
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
+            
+        # 儲存使用者的 Google 電子郵件
+        user_settings = load_user_settings(user.id)
+        user_settings['email'] = user_info['email']
+        save_user_settings(user.id, user_settings)
         
         return redirect(url_for('index'))
     except Exception as e:
