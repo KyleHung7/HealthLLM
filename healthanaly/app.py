@@ -1,7 +1,7 @@
 import os
 import threading
 import pandas as pd
-from flask import Flask, render_template, request, send_file, make_response, jsonify, redirect, url_for
+from flask import Flask, render_template, request, send_file, make_response, redirect, url_for
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -27,7 +27,6 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Flask and SocketIO initialization
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'Uploads'
 app.config['TMP_FOLDER'] = 'tmp'
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your-secret-key")
 app.config['GOOGLE_CLIENT_ID'] = os.getenv("GOOGLE_CLIENT_ID")
@@ -47,7 +46,6 @@ if logLess:
     print(" * Running on http://127.0.0.1:5000")
 
 # Create upload and temporary folders
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['TMP_FOLDER'], exist_ok=True)
 
 # Onboarding page
