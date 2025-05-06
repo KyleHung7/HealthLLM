@@ -15,7 +15,7 @@ from health_analysis import (
     generate_html,
     generate_pdf_from_html
 )
-from auth import init_auth, get_user_upload_folder, load_user_settings, save_user_settings
+from auth import init_auth, get_user_upload_folder, load_user_settings
 from datetime import datetime
 from lib import mdToHtml, clear_user_data_folder
 
