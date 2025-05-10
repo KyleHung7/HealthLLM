@@ -18,10 +18,11 @@
         }
         header {
             background: #a3d5d3;
-            padding: 2rem;
+            padding-top: 1rem;
+            padding-bottom: 0.5rem;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
         header h1 {
             font-size: 2.5rem;
@@ -44,8 +45,8 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            padding: 2rem;
-            margin-bottom: 2rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
         }
         h3 {
             color: #2c7a7b;
@@ -56,11 +57,27 @@
             padding-left: 0;
         }
         ul li {
-            font-size: 1.5rem;
-            padding: 0.5rem 0;
+            font-size: 1.2rem;
+            /* padding: 0.5rem 0; */
         }
         .container {
-            padding: 2rem;
+            padding: 1rem;
+        }
+
+        input[type="number"] {
+            font-size: 2rem !important;
+            font-weight: 700;
+            color: #064f40;
+        }
+
+        .table>:not(caption)>*>* {
+            color: #2c7a7b;
+        }
+
+        .fs-small {
+            font-size: small;
+            color: #2c7a7b;
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -78,7 +95,7 @@
                 <input type="text" id="record-date-elderly" class="form-control form-control-lg" readonly style="font-size: 1.25rem; max-width: 300px;">
             </div>
 
-            <ul class="nav nav-tabs nav-fill" id="timeOfDayTab" role="tablist" style="font-size: 1.3rem; margin-bottom: 1rem;">
+            <ul class="nav nav-tabs nav-fill" id="timeOfDayTab" role="tablist" style="margin-bottom: 1rem;">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="morning-tab-btn" data-bs-toggle="tab" data-bs-target="#morning-tab-pane" type="button" role="tab" aria-controls="morning-tab-pane" aria-selected="true">☀️ 早上</button>
                 </li>
@@ -98,9 +115,9 @@
                         <table class="table table-bordered" style="font-size: 1.25rem;">
                             <thead>
                                 <tr>
-                                    <th>收縮壓 (mmHg)</th>
-                                    <th>舒張壓 (mmHg)</th>
-                                    <th>脈搏 (次/分)</th>
+                                    <th>收縮壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>舒張壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>脈搏 <span class="fs-small">(次/分)</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -115,8 +132,8 @@
                         <table class="table table-bordered" style="font-size: 1.25rem;">
                             <thead>
                                 <tr>
-                                    <th>空腹血糖 (mg/dL)</th>
-                                    <th>餐後血糖 (mg/dL)</th>
+                                    <th>空腹血糖 <span class="fs-small">(mg/dL)</span></th>
+                                    <th>餐後血糖 <span class="fs-small">(mg/dL)</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -134,9 +151,9 @@
                         <table class="table table-bordered" style="font-size: 1.25rem;">
                             <thead>
                                 <tr>
-                                    <th>收縮壓 (mmHg)</th>
-                                    <th>舒張壓 (mmHg)</th>
-                                    <th>脈搏 (次/分)</th>
+                                    <th>收縮壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>舒張壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>脈搏 <span class="fs-small">(次/分)</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -151,8 +168,8 @@
                         <table class="table table-bordered" style="font-size: 1.25rem;">
                             <thead>
                                 <tr>
-                                    <th>空腹血糖 (mg/dL)</th>
-                                    <th>餐後血糖 (mg/dL)</th>
+                                    <th>空腹血糖 <span class="fs-small">(mg/dL)</span></th>
+                                    <th>餐後血糖 <span class="fs-small">(mg/dL)</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -170,9 +187,9 @@
                         <table class="table table-bordered" style="font-size: 1.25rem;">
                             <thead>
                                 <tr>
-                                    <th>收縮壓 (mmHg)</th>
-                                    <th>舒張壓 (mmHg)</th>
-                                    <th>脈搏 (次/分)</th>
+                                    <th>收縮壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>舒張壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>脈搏 <span class="fs-small">(次/分)</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -187,8 +204,8 @@
                         <table class="table table-bordered" style="font-size: 1.25rem;">
                             <thead>
                                 <tr>
-                                    <th>空腹血糖 (mg/dL)</th>
-                                    <th>餐後血糖 (mg/dL)</th>
+                                    <th>空腹血糖 <span class="fs-small">(mg/dL)</span></th>
+                                    <th>餐後血糖 <span class="fs-small">(mg/dL)</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -212,12 +229,6 @@
             </button>
         </div>
 
-        <div class="card">
-            <h3>已綁定的照顧者帳戶</h3>
-            <ul id="bound-accounts">
-                <!-- Bound accounts will be listed here -->
-            </ul>
-        </div>
     </div>
 
     <!-- Bootstrap JS and Popper.js -->
@@ -225,26 +236,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
     <script>
-        // Fetch and display bound accounts
-        function loadBoundAccounts() {
-            fetch('/api/bound_accounts')
-                .then(response => response.json())
-                .then(data => {
-                    const list = document.getElementById('bound-accounts');
-                    if (list) {
-                        list.innerHTML = '';
-                        if (data.accounts && Array.isArray(data.accounts)) {
-                            data.accounts.forEach(account => {
-                                const li = document.createElement('li');
-                                li.textContent = account.name;
-                                list.appendChild(li);
-                            });
-                        }
-                    }
-                })
-                .catch(error => console.error('Error loading bound accounts:', error));
-        }
-
         function setActiveTabByTime() {
             const now = new Date();
             const currentHour = now.getHours();
@@ -269,7 +260,6 @@
             const recordDateInput = document.getElementById('record-date-elderly');
             if (recordDateInput) recordDateInput.value = today;
             
-            loadBoundAccounts();
             setActiveTabByTime();
             loadTodaysHealthData(); // Fetch and populate today's data
         });
