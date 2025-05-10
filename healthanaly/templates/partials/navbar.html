@@ -12,6 +12,9 @@
     </div>
     <div class="navbar__links">
         <a href="/" class="navbar__link {% if request.path == '/' %}navbar__link--active{% endif %}">首頁</a>
+        {% if account_role == 'general' %}
+        <a href="{{ url_for('general_dashboard') }}" class="navbar__link {% if request.path == url_for('general_dashboard') %}navbar__link--active{% endif %}">已連結帳戶</a>
+        {% endif %}
         <a href="/auth/profile" class="navbar__link {% if request.path == '/auth/profile' %}navbar__link--active{% endif %}">我的帳號</a>
         <a href="/auth/logout" class="navbar__link navbar__link--logout">登出</a>
     </div>

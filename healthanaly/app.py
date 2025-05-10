@@ -6,7 +6,7 @@ from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from flask_login import login_required, current_user
-from auth import init_auth, get_user_upload_folder, load_user_settings
+from auth import init_auth, get_user_upload_folder, load_user_settings, get_user_by_id
 from health_analysis import (
     health_trend_analysis,
     answer_care_question,
@@ -45,6 +45,14 @@ if logLess:
 # Create upload and temporary folders
 os.makedirs(app.config['TMP_FOLDER'], exist_ok=True)
 
+# Context processor to make account_role available to templates
+@app.context_processor
+def inject_user_role():
+    if current_user.is_authenticated:
+        user_settings = load_user_settings(current_user.id)
+        return dict(account_role=user_settings.get('account_role'))
+    return dict(account_role=None)
+
 # Onboarding page
 @app.route('/onboarding')
 @login_required
@@ -68,7 +76,224 @@ def index():
         
         if account_role == 'elderly':
             return render_template('elderly_index.html')
+        # For general users, index.html is currently the default.
+        # The new dashboard will be on a separate route.
     return render_template('index.html')
+
+# General User Dashboard page
+@app.route('/general_dashboard')
+@login_required
+def general_dashboard():
+    user_settings = load_user_settings(current_user.id)
+    account_role = user_settings.get('account_role')
+
+    if not account_role:
+        # User hasn't completed onboarding, redirect them.
+        return redirect(url_for('onboarding'))
+
+    if account_role == 'general':
+        # Only general users can access this dashboard.
+        return render_template('general_user_dashboard.html')
+    else:
+        # If an elderly user or any other role tries to access, redirect to their default page.
+        return redirect(url_for('index'))
+
+# API endpoint to get linked accounts
+@app.route('/get_linked_accounts', methods=['GET'])
+@login_required
+def get_linked_accounts_api():
+    user_settings = load_user_settings(current_user.id)
+    bound_account_ids = user_settings.get('bound_accounts', [])
+    
+    linked_accounts_details = []
+    for account_id in bound_account_ids:
+        user = get_user_by_id(account_id) # This function is in auth.py
+        if user:
+            linked_accounts_details.append({'id': user.id, 'name': user.name})
+            
+    return jsonify({'accounts': linked_accounts_details})
+
+# API endpoint to get linked account's health data (BP or Sugar) for a specific date
+def get_linked_health_data_generic(linked_user_id, data_type_csv_name, target_date_str):
+    # Security check: Ensure current_user is linked to linked_user_id
+    current_user_settings = load_user_settings(current_user.id)
+    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+        return jsonify({'error': 'Unauthorized access to linked account data.'}), 403
+
+    if not target_date_str:
+        return jsonify({'error': 'Missing date parameter.'}), 400
+
+    linked_user_folder = get_user_upload_folder(linked_user_id)
+    csv_path = os.path.join(linked_user_folder, data_type_csv_name)
+    
+    record_for_date = None
+    if os.path.exists(csv_path):
+        try:
+            df = pd.read_csv(csv_path)
+            # Ensure 'Date' column is string type for comparison, and handle potential NaN before astype(str)
+            df['Date'] = df['Date'].fillna('').astype(str)
+            
+            # Filter for the target date
+            # Use .loc to avoid SettingWithCopyWarning if we were to modify, though here we are just reading
+            date_match_df = df.loc[df['Date'] == target_date_str]
+            
+            if not date_match_df.empty:
+                # Take the last entry for the date if multiple exist (though ideally there should be one)
+                # Convert that row to a dictionary. Replace NaN with empty strings.
+                record_for_date = date_match_df.iloc[-1].fillna('').astype(str).to_dict()
+                
+                # Frontend expects keys like 'morning_systolic', backend CSV has 'Morning_Systolic'
+                # We need to map CSV column names to frontend expected names if they differ.
+                # For now, let's assume the frontend will handle the CSV column names directly if they are consistent,
+                # or the populateBpForm/populateSugarForm will map them.
+                # The current populateBpForm expects lowercase_with_underscore.
+                # Let's transform keys here to match frontend expectations.
+                
+                if record_for_date:
+                    transformed_record = {}
+                    for key, value in record_for_date.items():
+                        # Convert CamelCase from CSV to snake_case for frontend
+                        new_key = key.lower()
+                        transformed_record[new_key] = value
+                    record_for_date = transformed_record
+
+        except pd.errors.EmptyDataError:
+            app.logger.info(f"{data_type_csv_name} for user {linked_user_id} is empty.")
+            # record_for_date remains None
+        except Exception as e:
+            app.logger.error(f"Error reading {data_type_csv_name} for user {linked_user_id} on date {target_date_str}: {e}")
+            return jsonify({'error': f'Error reading {data_type_csv_name}.'}), 500
+            
+    return jsonify({'record': record_for_date})
+
+@app.route('/get_linked_bp_data', methods=['GET'])
+@login_required
+def get_linked_bp_data_api():
+    linked_user_id = request.args.get('user_id')
+    target_date = request.args.get('date') # Get the date from query parameters
+    if not linked_user_id:
+        return jsonify({'error': 'Missing user_id parameter.'}), 400
+    if not target_date:
+        return jsonify({'error': 'Missing date parameter.'}), 400
+    return get_linked_health_data_generic(linked_user_id, 'blood_pressure.csv', target_date)
+
+@app.route('/get_linked_sugar_data', methods=['GET'])
+@login_required
+def get_linked_sugar_data_api():
+    linked_user_id = request.args.get('user_id')
+    target_date = request.args.get('date') # Get the date from query parameters
+    if not linked_user_id:
+        return jsonify({'error': 'Missing user_id parameter.'}), 400
+    if not target_date:
+        return jsonify({'error': 'Missing date parameter.'}), 400
+    return get_linked_health_data_generic(linked_user_id, 'blood_sugar.csv', target_date)
+
+# API endpoint to update linked account's health data
+def update_linked_health_data_generic(linked_user_id, records_data, data_type, csv_filename):
+    # Security check
+    current_user_settings = load_user_settings(current_user.id)
+    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+        return jsonify({'success': False, 'message': '未授權更新此帳戶的資料。'}), 403
+
+    linked_user_folder = get_user_upload_folder(linked_user_id)
+    csv_path = os.path.join(linked_user_folder, csv_filename)
+
+    validated_records = []
+    for record_dict in records_data:
+        # Ensure 'date' is present
+        if 'date' not in record_dict or not record_dict['date']:
+            return jsonify({'success': False, 'message': '記錄中缺少日期欄位。'}), 400
+        
+        # Replace None with '無' for validation, as '無' is the expected string for empty in validation
+        processed_record_for_validation = {k: (v if v is not None else '無') for k, v in record_dict.items()}
+
+        validation_error = validate_health_data(processed_record_for_validation, data_type)
+        if validation_error:
+            return jsonify({'success': False, 'message': f"資料驗證失敗 (日期 {record_dict['date']}): {validation_error}"}), 400
+        
+        # Prepare record for CSV: use None for empty values which will become empty strings in CSV
+        # Or keep '無' if that's the desired representation for truly absent data.
+        # The frontend sends null for empty inputs, which are converted to None by request.get_json().
+        # For CSV, pandas will write None as empty strings.
+        csv_ready_record = {k: (v if v is not None else '') for k, v in record_dict.items()}
+        validated_records.append(csv_ready_record)
+
+    try:
+        if not validated_records: # If all rows were empty and thus skipped by frontend logic
+             # Create an empty DataFrame with correct columns to effectively clear the CSV
+            if data_type == 'blood_pressure':
+                columns = ['Date', 'Morning_Systolic', 'Morning_Diastolic', 'Morning_Pulse', 
+                           'Noon_Systolic', 'Noon_Diastolic', 'Noon_Pulse',
+                           'Evening_Systolic', 'Evening_Diastolic', 'Evening_Pulse']
+            else: # blood_sugar
+                columns = ['Date', 'Morning_Fasting', 'Morning_Postprandial', 
+                           'Noon_Fasting', 'Noon_Postprandial',
+                           'Evening_Fasting', 'Evening_Postprandial']
+            df = pd.DataFrame(columns=columns)
+        else:
+            df = pd.DataFrame(validated_records)
+             # Ensure correct column order and presence, matching save_health_data_background
+            if data_type == 'blood_pressure':
+                # Map frontend names to CSV column names
+                column_map = {
+                    'date': 'Date', 'morning_systolic': 'Morning_Systolic', 'morning_diastolic': 'Morning_Diastolic', 'morning_pulse': 'Morning_Pulse',
+                    'noon_systolic': 'Noon_Systolic', 'noon_diastolic': 'Noon_Diastolic', 'noon_pulse': 'Noon_Pulse',
+                    'evening_systolic': 'Evening_Systolic', 'evening_diastolic': 'Evening_Diastolic', 'evening_pulse': 'Evening_Pulse'
+                }
+                df.rename(columns=column_map, inplace=True)
+                # Ensure all columns are present
+                expected_bp_cols = ['Date', 'Morning_Systolic', 'Morning_Diastolic', 'Morning_Pulse', 'Noon_Systolic', 'Noon_Diastolic', 'Noon_Pulse', 'Evening_Systolic', 'Evening_Diastolic', 'Evening_Pulse']
+                for col in expected_bp_cols:
+                    if col not in df.columns:
+                        df[col] = ''
+                df = df[expected_bp_cols] # Order columns
+
+            elif data_type == 'blood_sugar':
+                column_map = {
+                    'date': 'Date', 'morning_fasting': 'Morning_Fasting', 'morning_postprandial': 'Morning_Postprandial',
+                    'noon_fasting': 'Noon_Fasting', 'noon_postprandial': 'Noon_Postprandial',
+                    'evening_fasting': 'Evening_Fasting', 'evening_postprandial': 'Evening_Postprandial'
+                }
+                df.rename(columns=column_map, inplace=True)
+                expected_sugar_cols = ['Date', 'Morning_Fasting', 'Morning_Postprandial', 'Noon_Fasting', 'Noon_Postprandial', 'Evening_Fasting', 'Evening_Postprandial']
+                for col in expected_sugar_cols:
+                    if col not in df.columns:
+                        df[col] = ''
+                df = df[expected_sugar_cols]
+        
+        # Enforce one record per day by taking the last entry if duplicates for a date exist
+        if not df.empty:
+            df = df.groupby('Date', as_index=False).last()
+            
+        df.sort_values(by='Date', inplace=True)
+        df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+        # Emit update to the specific linked user dashboard if possible, or a general success
+        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")} 資料已成功更新。', 'event_type': 'summary', 'target': f'linked_{data_type}'})
+        return jsonify({'success': True, 'message': f'{data_type.replace("_", " ")} 資料已成功更新。'})
+    except Exception as e:
+        app.logger.error(f"Error saving linked {data_type} data for user {linked_user_id}: {e}")
+        socketio.emit('update', {'message': f'❌ 更新連結帳戶 {data_type.replace("_", " ")} 資料時發生錯誤: {str(e)}', 'event_type': 'summary', 'target': f'linked_{data_type}'})
+        return jsonify({'success': False, 'message': f'儲存失敗: {str(e)}'}), 500
+
+@app.route('/update_linked_bp_data', methods=['POST'])
+@login_required
+def update_linked_bp_data_api():
+    data = request.get_json()
+    linked_user_id = data.get('user_id')
+    records = data.get('records')
+    if not linked_user_id or records is None: # records can be an empty list
+        return jsonify({'success': False, 'message': '缺少 user_id 或 records 資料。'}), 400
+    return update_linked_health_data_generic(linked_user_id, records, 'blood_pressure', 'blood_pressure.csv')
+
+@app.route('/update_linked_sugar_data', methods=['POST'])
+@login_required
+def update_linked_sugar_data_api():
+    data = request.get_json()
+    linked_user_id = data.get('user_id')
+    records = data.get('records')
+    if not linked_user_id or records is None:
+        return jsonify({'success': False, 'message': '缺少 user_id 或 records 資料。'}), 400
+    return update_linked_health_data_generic(linked_user_id, records, 'blood_sugar', 'blood_sugar.csv')
 
 # Validate input values
 def validate_health_data(data, data_type):
@@ -381,6 +606,42 @@ def upload_trend():
     thread.start()
     return '檔案已上傳並開始處理。', 200
 
+# Upload CSV for trend analysis for a LINKED account
+@app.route('/upload_trend_linked', methods=['POST'])
+@login_required
+def upload_trend_linked():
+    file = request.files.get('file')
+    linked_user_id = request.form.get('user_id')
+
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'message': '請選擇檔案'}), 400
+    if not linked_user_id:
+        return jsonify({'success': False, 'message': '缺少連結帳戶 user_id'}), 400
+
+    # Security check: Ensure current_user is linked to linked_user_id
+    current_user_settings = load_user_settings(current_user.id)
+    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+        return jsonify({'success': False, 'message': '未授權分析此帳戶的資料。'}), 403
+
+    filename = secure_filename(file.filename)
+    # Save to the linked user's folder
+    linked_user_folder = get_user_upload_folder(linked_user_id)
+    file_path = os.path.join(linked_user_folder, filename)
+    
+    try:
+        file.save(file_path)
+    except Exception as e:
+        app.logger.error(f"Error saving uploaded trend file for linked user {linked_user_id}: {e}")
+        socketio.emit('update', {'message': f"❌ 上傳趨勢分析檔案失敗: {str(e)}", 'event_type': 'trend', 'target': 'trend'})
+        return jsonify({'success': False, 'message': f'檔案儲存失敗: {str(e)}'}), 500
+
+    socketio.emit('update', {'message': '🟢 連結帳戶檔案上傳成功，開始趨勢分析...', 'event_type': 'trend', 'target': 'trend'})
+    # Use linked_user_id for the background task
+    thread = threading.Thread(target=trend_background_task, args=(file_path, linked_user_id))
+    thread.start()
+    return jsonify({'success': True, 'message': '連結帳戶檔案已上傳並開始處理。'}), 200
+
+
 # Download PDF report
 @app.route('/download_pdf/<user_id>/<data_type>/<timestamp>')
 @login_required
@@ -439,7 +700,37 @@ def ask_question():
         return '問題已處理', 200
     except Exception as e:
         socketio.emit('update', {'message': f"❌ 問題回答錯誤: {str(e)}", 'event_type': 'question'})
-        return '問題處理錯誤', 500
+    return '問題處理錯誤', 500
+
+# Answer caregiver questions for a LINKED account
+@app.route('/ask_question_linked', methods=['POST'])
+@login_required
+def ask_question_linked():
+    question = request.form.get('question', '').strip()
+    linked_user_id = request.form.get('user_id')
+
+    if not question:
+        return jsonify({'success': False, 'message': '請輸入問題'}), 400
+    if not linked_user_id:
+        return jsonify({'success': False, 'message': '缺少連結帳戶 user_id'}), 400
+
+    # Security check: Ensure current_user is linked to linked_user_id
+    current_user_settings = load_user_settings(current_user.id)
+    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+        return jsonify({'success': False, 'message': '未授權查詢此帳戶的問題。'}), 403
+    
+    # For now, answer_care_question is generic. If it needs linked_user_id context,
+    # it would need to be passed, e.g., answer_care_question(question, linked_user_id)
+    try:
+        answer = answer_care_question(question) # Potentially pass linked_user_id if needed by the function
+        answer_html = mdToHtml(answer)
+        # The 'target' for socketio event might need adjustment if specific UI elements for linked Q&A exist
+        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question', 'target': 'question'})
+        return jsonify({'success': True, 'message': '連結帳戶問題已處理'}), 200
+    except Exception as e:
+        app.logger.error(f"Error answering linked question for user {linked_user_id}: {e}")
+        socketio.emit('update', {'message': f"❌ 連結帳戶問題回答錯誤: {str(e)}", 'event_type': 'question', 'target': 'question'})
+        return jsonify({'success': False, 'message': '問題處理錯誤'}), 500
 
 # Start server
 if __name__ == '__main__':
