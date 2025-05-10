@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Binding</title>
+</head>
+<body>
+    <h2>Account Binding</h2>
+    <h3>Received Requests</h3>
+    <ul>
+        {% for request in received_requests %}
+            <li>
+                User {{ request.request_user_email }} wants to bind with you.
+                <a href="/auth/binding/accept/{{ request.request_user_id }}">Accept</a>
+                <a href="/auth/binding/reject/{{ request.request_user_id }}">Reject</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h3>Sent Requests</h3>
+    <a href="/auth/binding/add" class="btn btn-outline-secondary btn-sm onboarding-btn">
+        新增帳號連結
+    </a>
+    <ul>
+        {% for request in sent_requests %}
+            <li>
+                You sent a binding request to {{ request.email }}.
+                <a href="/auth/binding/withdraw/{{ request.email }}">Withdraw</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <h3>Bound Accounts</h3>
+    <ul>
+        {% for email in bound_accounts %}
+            <li>
+                Account Email: {{ email }}
+                <a href="/auth/binding/remove/{{ email }}">Remove</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

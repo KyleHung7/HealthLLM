@@ -249,6 +249,9 @@
 
     {% include 'partials/navbar.html' %}
     
+    <!-- Store authentication status in a hidden input -->
+    <input type="hidden" id="auth-status" value="{{ current_user.is_authenticated }}">
+
     {% if current_user.is_authenticated %}
     <div class="welcome-banner">
         <h3>歡迎回來，{{ current_user.name }}！</h3>
@@ -356,7 +359,7 @@
         <h2>請先登入系統</h2>
         <p>為了保障您的隱私和健康數據安全，使用系統前請先登入</p>
         <a href="/auth/login" class="login-btn">
-            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" style="border-radius: 50%;">
+            <img src="/static/img/g-logo.png" alt="Google Logo" style="border-radius: 50%;" width="24px">
             使用 Google 帳號登入
         </a>
     </div>
