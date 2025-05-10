@@ -235,14 +235,10 @@ def check_file_access(file_path):
     return file_path.startswith(user_folder)
 
 # 取得使用者上傳資料夾路徑
-def get_user_upload_folder():
-    if not current_user.is_authenticated:
-        return None
-    
-    user_folder = os.path.join('users', secure_filename(current_user.id))
+def get_user_upload_folder(user_id):
+    user_folder = os.path.join('users', secure_filename(user_id))
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
-    
     return user_folder
 
 def load_user_settings(user_id):
