@@ -72,10 +72,141 @@
 
     <div class="container">
         <div class="card">
+            <h3>📝 健康紀錄輸入</h3>
+            <div class="mb-3">
+                <label for="record-date-elderly" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;">日期：</label>
+                <input type="text" id="record-date-elderly" class="form-control form-control-lg" readonly style="font-size: 1.25rem; max-width: 300px;">
+            </div>
+
+            <ul class="nav nav-tabs nav-fill" id="timeOfDayTab" role="tablist" style="font-size: 1.3rem; margin-bottom: 1rem;">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="morning-tab-btn" data-bs-toggle="tab" data-bs-target="#morning-tab-pane" type="button" role="tab" aria-controls="morning-tab-pane" aria-selected="true">☀️ 早上</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="noon-tab-btn" data-bs-toggle="tab" data-bs-target="#noon-tab-pane" type="button" role="tab" aria-controls="noon-tab-pane" aria-selected="false">🕛 中午</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="evening-tab-btn" data-bs-toggle="tab" data-bs-target="#evening-tab-pane" type="button" role="tab" aria-controls="evening-tab-pane" aria-selected="false">🌙 晚上</button>
+                </li>
+            </ul>
+
+            <form id="health-data-form-elderly">
+                <div class="tab-content" id="timeOfDayTabContent">
+                    <!-- Morning Tab Pane -->
+                    <div class="tab-pane fade" id="morning-tab-pane" role="tabpanel" aria-labelledby="morning-tab-btn" tabindex="0">
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血壓紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>收縮壓 (mmHg)</th>
+                                    <th>舒張壓 (mmHg)</th>
+                                    <th>脈搏 (次/分)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_systolic" step="1" min="50" max="250" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_diastolic" step="1" min="30" max="150" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_pulse" step="1" min="30" max="200" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血糖紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>空腹血糖 (mg/dL)</th>
+                                    <th>餐後血糖 (mg/dL)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_fasting" step="1" min="50" max="300" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_postprandial" step="1" min="70" max="400" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Noon Tab Pane -->
+                    <div class="tab-pane fade" id="noon-tab-pane" role="tabpanel" aria-labelledby="noon-tab-btn" tabindex="0">
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血壓紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>收縮壓 (mmHg)</th>
+                                    <th>舒張壓 (mmHg)</th>
+                                    <th>脈搏 (次/分)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_systolic" step="1" min="50" max="250" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_diastolic" step="1" min="30" max="150" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_pulse" step="1" min="30" max="200" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血糖紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>空腹血糖 (mg/dL)</th>
+                                    <th>餐後血糖 (mg/dL)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_fasting" step="1" min="50" max="300" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_postprandial" step="1" min="70" max="400" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Evening Tab Pane -->
+                    <div class="tab-pane fade" id="evening-tab-pane" role="tabpanel" aria-labelledby="evening-tab-btn" tabindex="0">
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血壓紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>收縮壓 (mmHg)</th>
+                                    <th>舒張壓 (mmHg)</th>
+                                    <th>脈搏 (次/分)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_systolic" step="1" min="50" max="250" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_diastolic" step="1" min="30" max="150" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_pulse" step="1" min="30" max="200" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血糖紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>空腹血糖 (mg/dL)</th>
+                                    <th>餐後血糖 (mg/dL)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_fasting" step="1" min="50" max="300" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_postprandial" step="1" min="70" max="400" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-custom text-white mt-3">💾 儲存今日數據</button>
+            </form>
+            <div id="summary-status-elderly" class="mt-3" style="font-size: 1.25rem;"></div>
+        </div>
+
+        <div class="card">
             <h3>主要功能</h3>
-            <button class="btn btn-custom text-white" onclick="location.href='/upload_summary'">
-                上傳健康數據
-            </button>
             <button class="btn btn-custom text-white" onclick="location.href='/auth/profile'">
                 查看個人資料
             </button>
@@ -92,6 +223,7 @@
     <!-- Bootstrap JS and Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
     <script>
         // Fetch and display bound accounts
         function loadBoundAccounts() {
@@ -99,17 +231,171 @@
                 .then(response => response.json())
                 .then(data => {
                     const list = document.getElementById('bound-accounts');
-                    list.innerHTML = '';
-                    data.accounts.forEach(account => {
-                        const li = document.createElement('li');
-                        li.textContent = account.name;
-                        list.appendChild(li);
-                    });
+                    if (list) {
+                        list.innerHTML = '';
+                        if (data.accounts && Array.isArray(data.accounts)) {
+                            data.accounts.forEach(account => {
+                                const li = document.createElement('li');
+                                li.textContent = account.name;
+                                list.appendChild(li);
+                            });
+                        }
+                    }
+                })
+                .catch(error => console.error('Error loading bound accounts:', error));
+        }
+
+        function setActiveTabByTime() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            let activeTabId = 'morning-tab-btn'; // Default to morning
+
+            if (currentHour >= 12 && currentHour <= 17) { // Noon: 12 PM to 5:59 PM
+                activeTabId = 'noon-tab-btn';
+            } else if (currentHour >= 18 || (currentHour >= 0 && currentHour <= 5)) { // Evening: 6 PM to 5:59 AM
+                activeTabId = 'evening-tab-btn';
+            }
+            // Morning is 6 AM to 11:59 AM, covered by default or if other conditions fail
+
+            const tabElement = document.getElementById(activeTabId);
+            if (tabElement) {
+                const tab = new bootstrap.Tab(tabElement);
+                tab.show();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const recordDateInput = document.getElementById('record-date-elderly');
+            if (recordDateInput) recordDateInput.value = today;
+            
+            loadBoundAccounts();
+            setActiveTabByTime();
+            loadTodaysHealthData(); // Fetch and populate today's data
+        });
+
+        function loadTodaysHealthData() {
+            fetch('/api/get_today_health_data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        for (const key in data) {
+                            if (data.hasOwnProperty(key)) {
+                                const inputElement = document.querySelector(`.health-input[name="${key}"]`);
+                                if (inputElement && data[key] !== null && data[key] !== '無') {
+                                    inputElement.value = data[key];
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching today's health data:", error);
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 無法載入今日已存數據: ${error.message}</p>`;
                 });
         }
 
-        // Load bound accounts when page loads
-        window.onload = loadBoundAccounts;
+        function validateFormInputsElderly(inputs) {
+            for (let input of inputs) {
+                if (input.value) { // Only validate if there is a value
+                    const min = parseFloat(input.min);
+                    const max = parseFloat(input.max);
+                    const value = parseFloat(input.value);
+                    if (isNaN(value) || value < min || value > max) {
+                        alert(`欄位 ${input.name} 請輸入 ${min} 到 ${max} 之間的有效數值。`);
+                        // input.value = ''; // Optionally clear invalid input, or let user correct
+                        input.focus();
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        const summaryStatusDivElderly = document.getElementById('summary-status-elderly');
+        const socket = io(); 
+
+        socket.on('update', function(data) {
+            if (summaryStatusDivElderly) {
+                const statusClass = data.message.includes('❌') ? 'text-danger' : 
+                                    data.message.includes('🟡') ? 'text-warning' : 'text-success';
+                summaryStatusDivElderly.innerHTML += `<p class="${statusClass}" style="font-size: 1.25rem;">${data.message}</p>`;
+                summaryStatusDivElderly.scrollTop = summaryStatusDivElderly.scrollHeight;
+
+                // If the update message indicates a successful save, reload the data
+                if (data.event_type === 'summary' && data.message.includes('🟢') && data.message.includes('紀錄儲存成功')) {
+                    loadTodaysHealthData(); // Refresh data in the form
+                }
+            }
+        });
+
+        socket.on('confirm_overwrite', function(data) {
+            if (confirm(data.message)) {
+                const formData = new FormData();
+                formData.append('data', JSON.stringify(data.data));
+                formData.append('data_type', data.data_type);
+                fetch('/overwrite_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.text())
+                  .then(result => {
+                      if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += '<p class="text-success" style="font-size: 1.25rem;">🟢 資料已覆蓋</p>';
+                  })
+                  .catch(error => {
+                      if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 覆蓋失敗: ${error}</p>`;
+                  });
+            } else {
+                if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += '<p class="text-danger" style="font-size: 1.25rem;">❌ 取消覆蓋資料</p>';
+            }
+        });
+
+        const healthDataFormElderly = document.getElementById('health-data-form-elderly');
+        if (healthDataFormElderly) {
+            healthDataFormElderly.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const allInputs = document.querySelectorAll('#timeOfDayTabContent .health-input');
+                if (!validateFormInputsElderly(allInputs)) return;
+                
+                const formData = new FormData();
+                const recordDateInput = document.getElementById('record-date-elderly');
+                if (recordDateInput) formData.append('date', recordDateInput.value);
+                
+                let hasDataToSave = false;
+                allInputs.forEach(input => {
+                    if (input.value) { // Only add to FormData if there's a value
+                        formData.append(input.name, input.value);
+                        hasDataToSave = true;
+                    }
+                });
+
+                if (!hasDataToSave) {
+                    alert("請至少輸入一筆健康數據才能儲存。");
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML = `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 請至少輸入一筆健康數據。</p>`;
+                    return;
+                }
+
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(`伺服器錯誤: ${response.statusText}`);
+                    return response.text(); // Assuming server sends back a simple text confirmation or error
+                }).then(data => {
+                    // Success message is handled by SocketIO 'update' event from server,
+                    // which will now also trigger loadTodaysHealthData().
+                    // No need to clear form fields here, as loadTodaysHealthData will repopulate them.
+                    // allInputs.forEach(input => input.value = ''); 
+                }).catch(error => {
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 儲存今日數據失敗: ${error.message}</p>`;
+                });
+            });
+        }
     </script>
 </body>
 </html>
