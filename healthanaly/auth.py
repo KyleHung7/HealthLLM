@@ -5,6 +5,9 @@ from authlib.integrations.flask_client import OAuth
 import json
 from constants.default_settings import default
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+
+load_dotenv()
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 login_manager = LoginManager()
@@ -49,6 +52,11 @@ def login():
     nonce = os.urandom(16).hex()
     session['nonce'] = nonce
     redirect_uri = url_for('auth.callback', _external=True)
+    if os.getenv('TUNNEL_MODE') == "True":
+        server_name = os.getenv("SERVER_NAME")
+        if server_name:
+            redirect_uri = url_for('auth.callback', _external=True, _scheme='https')
+            print("Custom server name redirect: ", redirect_uri)
     return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
 
 # OAuth 回調路由

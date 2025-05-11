@@ -29,6 +29,8 @@ app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "your-secret-key")
 app.config['GOOGLE_CLIENT_ID'] = os.getenv("GOOGLE_CLIENT_ID")
 app.config['GOOGLE_CLIENT_SECRET'] = os.getenv("GOOGLE_CLIENT_SECRET")
 app.config['OAUTHLIB_INSECURE_TRANSPORT'] = True
+if os.getenv('TUNNEL_MODE') == "True":
+    app.config['SERVER_NAME'] = os.getenv("SERVER_NAME")
 
 # Initialize authentication
 init_auth(app)
