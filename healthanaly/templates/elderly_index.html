@@ -371,10 +371,6 @@
         });
 
         function handleImageUpload(file, targetIdentifier, scanType) { // targetIdentifier can be a prefix (for BP) or a specific field name (for BS)
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('scan_type', scanType); 
-
             const scannedValuesContainer = document.getElementById('scanned-values-container');
             const confirmFillBtn = document.getElementById('confirm-fill-btn');
             const confirmationModalEl = document.getElementById('confirmationModal');
@@ -383,91 +379,144 @@
             // Show loading indicator in modal
             scannedValuesContainer.innerHTML = `
                 <div class="d-flex align-items-center">
-                    <strong>處理中，請稍候...</strong>
+                    <strong>影像處理中，請稍候...</strong>
                     <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
                 </div>`;
             confirmFillBtn.style.display = 'none'; // Hide confirm button during loading
             confirmationModal.show();
 
-            let endpoint = '';
-            let isBp = scanType === 'bp';
-            let isBs = scanType === 'fasting' || scanType === 'postprandial'; 
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
 
-            if (isBp) {
-                endpoint = '/imgrec/bp_image';
-            } else if (isBs) {
-                endpoint = '/imgrec/bs_image'; 
-            } else {
-                console.error('Unknown scan type for image upload:', scanType);
-                scannedValuesContainer.innerHTML = `<p class="text-danger">錯誤：未知的掃描類型。</p>`;
-                // confirmFillBtn remains hidden
-                return;
-            }
+                    const MAX_WIDTH = 1024;
+                    const MAX_HEIGHT = 1024;
+                    let width = img.width;
+                    let height = img.height;
 
-            fetch(endpoint, {
-                method: 'POST',
-                body: formData,
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`伺服器錯誤: ${response.status} ${response.statusText}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log("Data from backend:", data);
-                let modalContent = '';
-                let fieldsToFill = {}; 
-
-                if (isBp) {
-                    fieldsToFill[`${targetIdentifier.replace('_bp', '_systolic')}`] = data.systolic;
-                    fieldsToFill[`${targetIdentifier.replace('_bp', '_diastolic')}`] = data.diastolic;
-                    fieldsToFill[`${targetIdentifier.replace('_bp', '_pulse')}`] = data.pulse;
-                    
-                    modalContent = `
-                        <p>收縮壓: ${data.systolic !== null && data.systolic !== undefined ? data.systolic : '未識別'} mmHg</p>
-                        <p>舒張壓: ${data.diastolic !== null && data.diastolic !== undefined ? data.diastolic : '未識別'} mmHg</p>
-                        <p>脈搏: ${data.pulse !== null && data.pulse !== undefined ? data.pulse : '未識別'} 次/分</p>
-                    `;
-                } else if (isBs) {
-                    let value;
-                    if (scanType === 'fasting' && data.fasting !== undefined && data.fasting !== null) {
-                        value = data.fasting;
-                        modalContent = `<p>空腹血糖 (${targetIdentifier}): ${value} mg/dL</p>`;
-                        fieldsToFill[targetIdentifier] = value;
-                    } else if (scanType === 'postprandial' && data.postprandial !== undefined && data.postprandial !== null) {
-                        value = data.postprandial;
-                        modalContent = `<p>餐後血糖 (${targetIdentifier}): ${value} mg/dL</p>`;
-                        fieldsToFill[targetIdentifier] = value;
-                    } else if (data.blood_sugar_value !== undefined && data.blood_sugar_value !== null) { 
-                        value = data.blood_sugar_value;
-                        modalContent = `<p>血糖 (${targetIdentifier}): ${value} mg/dL (類型需確認)</p>`;
-                        fieldsToFill[targetIdentifier] = value; 
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
                     } else {
-                        modalContent = `<p>未能識別 ${scanType === 'fasting' ? '空腹' : '餐後'}血糖數值 (${targetIdentifier})。</p>`;
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
                     }
-                    
-                    if (Object.keys(fieldsToFill).length === 0) {
-                         modalContent = `<p>未能識別血糖數值 (${targetIdentifier})。</p>`;
-                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(function(blob) {
+                        const formData = new FormData();
+                        formData.append('image', blob, file.name); // Use original file name
+                        formData.append('scan_type', scanType);
+
+                        scannedValuesContainer.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <strong>影像掃描中，請稍候...</strong>
+                                <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                            </div>`;
+
+                        let endpoint = '';
+                        let isBp = scanType === 'bp';
+                        let isBs = scanType === 'fasting' || scanType === 'postprandial';
+
+                        if (isBp) {
+                            endpoint = '/imgrec/bp_image';
+                        } else if (isBs) {
+                            endpoint = '/imgrec/bs_image';
+                        } else {
+                            console.error('Unknown scan type for image upload:', scanType);
+                            scannedValuesContainer.innerHTML = `<p class="text-danger">錯誤：未知的掃描類型。</p>`;
+                            return;
+                        }
+
+                        fetch(endpoint, {
+                            method: 'POST',
+                            body: formData,
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`伺服器錯誤: ${response.status} ${response.statusText}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log("Data from backend:", data);
+                            let modalContent = '';
+                            let fieldsToFill = {};
+
+                            if (isBp) {
+                                fieldsToFill[`${targetIdentifier.replace('_bp', '_systolic')}`] = data.systolic;
+                                fieldsToFill[`${targetIdentifier.replace('_bp', '_diastolic')}`] = data.diastolic;
+                                fieldsToFill[`${targetIdentifier.replace('_bp', '_pulse')}`] = data.pulse;
+                                
+                                modalContent = `
+                                    <p>收縮壓: ${data.systolic !== null && data.systolic !== undefined ? data.systolic : '未識別'} mmHg</p>
+                                    <p>舒張壓: ${data.diastolic !== null && data.diastolic !== undefined ? data.diastolic : '未識別'} mmHg</p>
+                                    <p>脈搏: ${data.pulse !== null && data.pulse !== undefined ? data.pulse : '未識別'} 次/分</p>
+                                `;
+                            } else if (isBs) {
+                                let value;
+                                if (scanType === 'fasting' && data.fasting !== undefined && data.fasting !== null) {
+                                    value = data.fasting;
+                                    modalContent = `<p>空腹血糖 (${targetIdentifier}): ${value} mg/dL</p>`;
+                                    fieldsToFill[targetIdentifier] = value;
+                                } else if (scanType === 'postprandial' && data.postprandial !== undefined && data.postprandial !== null) {
+                                    value = data.postprandial;
+                                    modalContent = `<p>餐後血糖 (${targetIdentifier}): ${value} mg/dL</p>`;
+                                    fieldsToFill[targetIdentifier] = value;
+                                } else if (data.blood_sugar_value !== undefined && data.blood_sugar_value !== null) { 
+                                    value = data.blood_sugar_value;
+                                    modalContent = `<p>血糖 (${targetIdentifier}): ${value} mg/dL (類型需確認)</p>`;
+                                    fieldsToFill[targetIdentifier] = value; 
+                                } else {
+                                    modalContent = `<p>未能識別 ${scanType === 'fasting' ? '空腹' : '餐後'}血糖數值 (${targetIdentifier})。</p>`;
+                                }
+                                
+                                if (Object.keys(fieldsToFill).length === 0) {
+                                     modalContent = `<p>未能識別血糖數值 (${targetIdentifier})。</p>`;
+                                }
+                            }
+                            
+                            scannedValuesContainer.innerHTML = modalContent;
+                            if (Object.keys(fieldsToFill).some(key => fieldsToFill[key] !== null && fieldsToFill[key] !== undefined)) {
+                                confirmFillBtn.style.display = 'inline-block';
+                                confirmFillBtn.onclick = function() {
+                                    fillFormFields(fieldsToFill);
+                                    confirmationModal.hide();
+                                };
+                            } else {
+                                confirmFillBtn.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error uploading image or processing response:', error);
+                            scannedValuesContainer.innerHTML = `<p class="text-danger">圖片掃描失敗: ${error.message}</p>`;
+                            confirmFillBtn.style.display = 'none';
+                        });
+
+                    }, 'image/jpeg', 0.7); // Compress to JPEG with 70% quality
                 }
-                
-                scannedValuesContainer.innerHTML = modalContent;
-                if (Object.keys(fieldsToFill).some(key => fieldsToFill[key] !== null && fieldsToFill[key] !== undefined)) {
-                    confirmFillBtn.style.display = 'inline-block'; // Show confirm button only if there's data
-                    confirmFillBtn.onclick = function() {
-                        fillFormFields(fieldsToFill);
-                        confirmationModal.hide();
-                    };
-                } else {
-                    confirmFillBtn.style.display = 'none'; // Keep hidden if no data to fill
+                img.onerror = function() {
+                    console.error("Error loading image for compression.");
+                    scannedValuesContainer.innerHTML = `<p class="text-danger">圖片載入失敗，無法壓縮。</p>`;
+                    confirmFillBtn.style.display = 'none';
                 }
-            })
-            .catch(error => {
-                console.error('Error uploading image or processing response:', error);
-                scannedValuesContainer.innerHTML = `<p class="text-danger">圖片掃描失敗: ${error.message}</p>`;
-                confirmFillBtn.style.display = 'none'; 
-            });
+                img.src = event.target.result;
+            };
+            reader.onerror = function() {
+                console.error("Error reading file for compression.");
+                scannedValuesContainer.innerHTML = `<p class="text-danger">讀取檔案失敗，無法壓縮。</p>`;
+                confirmFillBtn.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
         }
 
         function fillFormFields(data) {
