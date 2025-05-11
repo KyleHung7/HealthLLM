@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康管理 - 長者界面</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: #f0f4f8;
+            color: #333;
+            font-size: 1.5rem; /* Larger font size for elderly */
+            line-height: 1.8;
+        }
+        header {
+            background: #a3d5d3;
+            padding-top: 1rem;
+            padding-bottom: 0.5rem;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        header h1 {
+            font-size: 2.5rem;
+            color: #064f40;
+        }
+        .btn-custom {
+            font-size: 1.75rem; /* Larger button text */
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            margin: 1rem auto;
+            background-color: #2c7a7b;
+            border: none;
+        }
+        .btn-custom:hover {
+            background-color: #205e60;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        h3 {
+            color: #2c7a7b;
+            font-size: 2rem;
+        }
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        ul li {
+            font-size: 1.2rem;
+            /* padding: 0.5rem 0; */
+        }
+        .container {
+            padding: 1rem;
+        }
+
+        input[type="number"] {
+            font-size: 2rem !important;
+            font-weight: 700;
+            color: #064f40;
+        }
+
+        .table>:not(caption)>*>* {
+            color: #2c7a7b;
+        }
+
+        .fs-small {
+            font-size: small;
+            color: #2c7a7b;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🧠 健康管理系統</h1>
+        <p>簡單易用，守護您的健康 💖</p>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h3>📝 健康紀錄輸入</h3>
+            <div class="mb-3">
+                <label for="record-date-elderly" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;">日期：</label>
+                <input type="text" id="record-date-elderly" class="form-control form-control-lg" readonly style="font-size: 1.25rem; max-width: 300px;">
+            </div>
+
+            <ul class="nav nav-tabs nav-fill" id="timeOfDayTab" role="tablist" style="margin-bottom: 1rem;">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="morning-tab-btn" data-bs-toggle="tab" data-bs-target="#morning-tab-pane" type="button" role="tab" aria-controls="morning-tab-pane" aria-selected="true">☀️ 早上</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="noon-tab-btn" data-bs-toggle="tab" data-bs-target="#noon-tab-pane" type="button" role="tab" aria-controls="noon-tab-pane" aria-selected="false">🕛 中午</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="evening-tab-btn" data-bs-toggle="tab" data-bs-target="#evening-tab-pane" type="button" role="tab" aria-controls="evening-tab-pane" aria-selected="false">🌙 晚上</button>
+                </li>
+            </ul>
+
+            <form id="health-data-form-elderly">
+                <div class="tab-content" id="timeOfDayTabContent">
+                    <!-- Morning Tab Pane -->
+                    <div class="tab-pane fade" id="morning-tab-pane" role="tabpanel" aria-labelledby="morning-tab-btn" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mt-3" style="font-size: 1.75rem;">血壓紀錄</h4>
+                            <button type="button" class="btn btn-outline-primary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="相機掃描血壓數值" data-target-prefix="morning_bp">
+                                📷 相機掃描
+                            </button>
+                        </div>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>收縮壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>舒張壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>脈搏 <span class="fs-small">(次/分)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_systolic" step="1" min="50" max="250" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_diastolic" step="1" min="30" max="150" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="morning_pulse" step="1" min="30" max="200" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血糖紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>空腹血糖 <span class="fs-small">(mg/dL)</span></th>
+                                    <th>餐後血糖 <span class="fs-small">(mg/dL)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-lg health-input" name="morning_fasting" step="1" min="50" max="300" style="font-size: 1.25rem;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="掃描空腹血糖" data-target-field="morning_fasting" data-scan-type="fasting">📷</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-lg health-input" name="morning_postprandial" step="1" min="70" max="400" style="font-size: 1.25rem;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="掃描餐後血糖" data-target-field="morning_postprandial" data-scan-type="postprandial">📷</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Noon Tab Pane -->
+                    <div class="tab-pane fade" id="noon-tab-pane" role="tabpanel" aria-labelledby="noon-tab-btn" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mt-3" style="font-size: 1.75rem;">血壓紀錄</h4>
+                            <button type="button" class="btn btn-outline-primary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="相機掃描血壓數值" data-target-prefix="noon_bp">
+                                📷 相機掃描
+                            </button>
+                        </div>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>收縮壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>舒張壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>脈搏 <span class="fs-small">(次/分)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_systolic" step="1" min="50" max="250" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_diastolic" step="1" min="30" max="150" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="noon_pulse" step="1" min="30" max="200" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血糖紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>空腹血糖 <span class="fs-small">(mg/dL)</span></th>
+                                    <th>餐後血糖 <span class="fs-small">(mg/dL)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-lg health-input" name="noon_fasting" step="1" min="50" max="300" style="font-size: 1.25rem;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="掃描空腹血糖" data-target-field="noon_fasting" data-scan-type="fasting">📷</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-lg health-input" name="noon_postprandial" step="1" min="70" max="400" style="font-size: 1.25rem;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="掃描餐後血糖" data-target-field="noon_postprandial" data-scan-type="postprandial">📷</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Evening Tab Pane -->
+                    <div class="tab-pane fade" id="evening-tab-pane" role="tabpanel" aria-labelledby="evening-tab-btn" tabindex="0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mt-3" style="font-size: 1.75rem;">血壓紀錄</h4>
+                            <button type="button" class="btn btn-outline-primary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="相機掃描血壓數值" data-target-prefix="evening_bp">
+                                📷 相機掃描
+                            </button>
+                        </div>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>收縮壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>舒張壓 <span class="fs-small">(mmHg)</span></th>
+                                    <th>脈搏 <span class="fs-small">(次/分)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_systolic" step="1" min="50" max="250" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_diastolic" step="1" min="30" max="150" style="font-size: 1.25rem;"></td>
+                                    <td><input type="number" class="form-control form-control-lg health-input" name="evening_pulse" step="1" min="30" max="200" style="font-size: 1.25rem;"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <h4 class="mt-3" style="font-size: 1.75rem;">血糖紀錄</h4>
+                        <table class="table table-bordered" style="font-size: 1.25rem;">
+                            <thead>
+                                <tr>
+                                    <th>空腹血糖 <span class="fs-small">(mg/dL)</span></th>
+                                    <th>餐後血糖 <span class="fs-small">(mg/dL)</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-lg health-input" name="evening_fasting" step="1" min="50" max="300" style="font-size: 1.25rem;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="掃描空腹血糖" data-target-field="evening_fasting" data-scan-type="fasting">📷</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control form-control-lg health-input" name="evening_postprandial" step="1" min="70" max="400" style="font-size: 1.25rem;">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm camera-scan-btn" data-bs-toggle="tooltip" title="掃描餐後血糖" data-target-field="evening_postprandial" data-scan-type="postprandial">📷</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-custom text-white mt-3">💾 儲存今日數據</button>
+            </form>
+            <div id="summary-status-elderly" class="mt-3" style="font-size: 1.25rem;"></div>
+        </div>
+
+        <div class="card">
+            <h3>主要功能</h3>
+            <button class="btn btn-custom text-white" onclick="location.href='/auth/profile'">
+                查看個人資料
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Hidden file input for camera scan -->
+    <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;">
+
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">確認掃描數值</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>請確認以下從圖片中識別的數值：</p>
+                    <div id="scanned-values-container">
+                        <!-- Scanned values will be populated here -->
+                    </div>
+                    <p class="mt-3">是否將這些數值填入表格？</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirm-fill-btn">確認填入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+    <script>
+        function setActiveTabByTime() {
+            const now = new Date();
+            const currentHour = now.getHours();
+            let activeTabId = 'morning-tab-btn'; // Default to morning
+
+            if (currentHour >= 12 && currentHour <= 17) { // Noon: 12 PM to 5:59 PM
+                activeTabId = 'noon-tab-btn';
+            } else if (currentHour >= 18 || (currentHour >= 0 && currentHour <= 5)) { // Evening: 6 PM to 5:59 AM
+                activeTabId = 'evening-tab-btn';
+            }
+            // Morning is 6 AM to 11:59 AM, covered by default or if other conditions fail
+
+            const tabElement = document.getElementById(activeTabId);
+            if (tabElement) {
+                const tab = new bootstrap.Tab(tabElement);
+                tab.show();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const recordDateInput = document.getElementById('record-date-elderly');
+            if (recordDateInput) recordDateInput.value = today;
+            
+            setActiveTabByTime();
+            loadTodaysHealthData(); // Fetch and populate today's data
+
+            // Initialize Bootstrap tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Camera Scan Button Listeners
+            const cameraScanButtons = document.querySelectorAll('.camera-scan-btn');
+            const cameraFileInput = document.getElementById('camera-file-input');
+            let currentTargetField = ''; // e.g., 'morning_systolic' or 'morning_fasting'
+            let currentScanType = ''; // 'bp', 'fasting', 'postprandial'
+
+            cameraScanButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.dataset.targetField) { // Individual BS scan button
+                        currentTargetField = this.dataset.targetField;
+                        currentScanType = this.dataset.scanType;
+                    } else { // BP scan button (uses targetPrefix)
+                        currentTargetField = this.dataset.targetPrefix; // e.g., morning_bp
+                        currentScanType = 'bp';
+                    }
+                    console.log("Button clicked. Target Field:", currentTargetField, "Scan Type:", currentScanType);
+                    cameraFileInput.click();
+                });
+            });
+
+            cameraFileInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    console.log("Image selected:", file.name, "Target Field:", currentTargetField, "Scan Type:", currentScanType);
+                    handleImageUpload(file, currentTargetField, currentScanType);
+                }
+                this.value = null; // Reset file input
+            });
+        });
+
+        function handleImageUpload(file, targetIdentifier, scanType) { // targetIdentifier can be a prefix (for BP) or a specific field name (for BS)
+            const scannedValuesContainer = document.getElementById('scanned-values-container');
+            const confirmFillBtn = document.getElementById('confirm-fill-btn');
+            const confirmationModalEl = document.getElementById('confirmationModal');
+            const confirmationModal = bootstrap.Modal.getInstance(confirmationModalEl) || new bootstrap.Modal(confirmationModalEl);
+
+            // Show loading indicator in modal
+            scannedValuesContainer.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <strong>影像處理中，請稍候...</strong>
+                    <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                </div>`;
+            confirmFillBtn.style.display = 'none'; // Hide confirm button during loading
+            confirmationModal.show();
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    const MAX_WIDTH = 1024;
+                    const MAX_HEIGHT = 1024;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob(function(blob) {
+                        const formData = new FormData();
+                        formData.append('image', blob, file.name); // Use original file name
+                        formData.append('scan_type', scanType);
+
+                        scannedValuesContainer.innerHTML = `
+                            <div class="d-flex align-items-center">
+                                <strong>影像掃描中，請稍候...</strong>
+                                <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+                            </div>`;
+
+                        let endpoint = '';
+                        let isBp = scanType === 'bp';
+                        let isBs = scanType === 'fasting' || scanType === 'postprandial';
+
+                        if (isBp) {
+                            endpoint = '/imgrec/bp_image';
+                        } else if (isBs) {
+                            endpoint = '/imgrec/bs_image';
+                        } else {
+                            console.error('Unknown scan type for image upload:', scanType);
+                            scannedValuesContainer.innerHTML = `<p class="text-danger">錯誤：未知的掃描類型。</p>`;
+                            return;
+                        }
+
+                        fetch(endpoint, {
+                            method: 'POST',
+                            body: formData,
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`伺服器錯誤: ${response.status} ${response.statusText}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log("Data from backend:", data);
+                            let modalContent = '';
+                            let fieldsToFill = {};
+
+                            if (isBp) {
+                                fieldsToFill[`${targetIdentifier.replace('_bp', '_systolic')}`] = data.systolic;
+                                fieldsToFill[`${targetIdentifier.replace('_bp', '_diastolic')}`] = data.diastolic;
+                                fieldsToFill[`${targetIdentifier.replace('_bp', '_pulse')}`] = data.pulse;
+                                
+                                modalContent = `
+                                    <p>收縮壓: ${data.systolic !== null && data.systolic !== undefined ? data.systolic : '未識別'} mmHg</p>
+                                    <p>舒張壓: ${data.diastolic !== null && data.diastolic !== undefined ? data.diastolic : '未識別'} mmHg</p>
+                                    <p>脈搏: ${data.pulse !== null && data.pulse !== undefined ? data.pulse : '未識別'} 次/分</p>
+                                `;
+                            } else if (isBs) {
+                                let value;
+                                if (scanType === 'fasting' && data.fasting !== undefined && data.fasting !== null) {
+                                    value = data.fasting;
+                                    modalContent = `<p>空腹血糖 (${targetIdentifier}): ${value} mg/dL</p>`;
+                                    fieldsToFill[targetIdentifier] = value;
+                                } else if (scanType === 'postprandial' && data.postprandial !== undefined && data.postprandial !== null) {
+                                    value = data.postprandial;
+                                    modalContent = `<p>餐後血糖 (${targetIdentifier}): ${value} mg/dL</p>`;
+                                    fieldsToFill[targetIdentifier] = value;
+                                } else if (data.blood_sugar_value !== undefined && data.blood_sugar_value !== null) { 
+                                    value = data.blood_sugar_value;
+                                    modalContent = `<p>血糖 (${targetIdentifier}): ${value} mg/dL (類型需確認)</p>`;
+                                    fieldsToFill[targetIdentifier] = value; 
+                                } else {
+                                    modalContent = `<p>未能識別 ${scanType === 'fasting' ? '空腹' : '餐後'}血糖數值 (${targetIdentifier})。</p>`;
+                                }
+                                
+                                if (Object.keys(fieldsToFill).length === 0) {
+                                     modalContent = `<p>未能識別血糖數值 (${targetIdentifier})。</p>`;
+                                }
+                            }
+                            
+                            scannedValuesContainer.innerHTML = modalContent;
+                            if (Object.keys(fieldsToFill).some(key => fieldsToFill[key] !== null && fieldsToFill[key] !== undefined)) {
+                                confirmFillBtn.style.display = 'inline-block';
+                                confirmFillBtn.onclick = function() {
+                                    fillFormFields(fieldsToFill);
+                                    confirmationModal.hide();
+                                };
+                            } else {
+                                confirmFillBtn.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error uploading image or processing response:', error);
+                            scannedValuesContainer.innerHTML = `<p class="text-danger">圖片掃描失敗: ${error.message}</p>`;
+                            confirmFillBtn.style.display = 'none';
+                        });
+
+                    }, 'image/jpeg', 0.7); // Compress to JPEG with 70% quality
+                }
+                img.onerror = function() {
+                    console.error("Error loading image for compression.");
+                    scannedValuesContainer.innerHTML = `<p class="text-danger">圖片載入失敗，無法壓縮。</p>`;
+                    confirmFillBtn.style.display = 'none';
+                }
+                img.src = event.target.result;
+            };
+            reader.onerror = function() {
+                console.error("Error reading file for compression.");
+                scannedValuesContainer.innerHTML = `<p class="text-danger">讀取檔案失敗，無法壓縮。</p>`;
+                confirmFillBtn.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function fillFormFields(data) {
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const inputElement = document.querySelector(`.health-input[name="${key}"]`);
+                    if (inputElement) {
+                        inputElement.value = data[key];
+                        console.log(`Filled ${key} with ${data[key]}`);
+                    } else {
+                        console.warn(`Input field for ${key} not found.`);
+                    }
+                }
+            }
+        }
+
+        function loadTodaysHealthData() {
+            fetch('/api/get_today_health_data')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        for (const key in data) {
+                            if (data.hasOwnProperty(key)) {
+                                const inputElement = document.querySelector(`.health-input[name="${key}"]`);
+                                if (inputElement && data[key] !== null && data[key] !== '無') {
+                                    inputElement.value = data[key];
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching today's health data:", error);
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 無法載入今日已存數據: ${error.message}</p>`;
+                });
+        }
+
+        function validateFormInputsElderly(inputs) {
+            for (let input of inputs) {
+                if (input.value) { // Only validate if there is a value
+                    const min = parseFloat(input.min);
+                    const max = parseFloat(input.max);
+                    const value = parseFloat(input.value);
+                    if (isNaN(value) || value < min || value > max) {
+                        alert(`欄位 ${input.name} 請輸入 ${min} 到 ${max} 之間的有效數值。`);
+                        // input.value = ''; // Optionally clear invalid input, or let user correct
+                        input.focus();
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        
+        const summaryStatusDivElderly = document.getElementById('summary-status-elderly');
+        const socket = io(); 
+
+        socket.on('update', function(data) {
+            if (summaryStatusDivElderly) {
+                const statusClass = data.message.includes('❌') ? 'text-danger' : 
+                                    data.message.includes('🟡') ? 'text-warning' : 'text-success';
+                summaryStatusDivElderly.innerHTML += `<p class="${statusClass}" style="font-size: 1.25rem;">${data.message}</p>`;
+                summaryStatusDivElderly.scrollTop = summaryStatusDivElderly.scrollHeight;
+
+                // If the update message indicates a successful save, reload the data
+                if (data.event_type === 'summary' && data.message.includes('🟢') && data.message.includes('紀錄儲存成功')) {
+                    loadTodaysHealthData(); // Refresh data in the form
+                }
+            }
+        });
+
+        socket.on('confirm_overwrite', function(data) {
+            if (confirm(data.message)) {
+                const formData = new FormData();
+                formData.append('data', JSON.stringify(data.data));
+                formData.append('data_type', data.data_type);
+                fetch('/overwrite_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.text())
+                  .then(result => {
+                      if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += '<p class="text-success" style="font-size: 1.25rem;">🟢 資料已覆蓋</p>';
+                  })
+                  .catch(error => {
+                      if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 覆蓋失敗: ${error}</p>`;
+                  });
+            } else {
+                if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += '<p class="text-danger" style="font-size: 1.25rem;">❌ 取消覆蓋資料</p>';
+            }
+        });
+
+        const healthDataFormElderly = document.getElementById('health-data-form-elderly');
+        if (healthDataFormElderly) {
+            healthDataFormElderly.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const allInputs = document.querySelectorAll('#timeOfDayTabContent .health-input');
+                if (!validateFormInputsElderly(allInputs)) return;
+                
+                const formData = new FormData();
+                const recordDateInput = document.getElementById('record-date-elderly');
+                if (recordDateInput) formData.append('date', recordDateInput.value);
+                
+                let hasDataToSave = false;
+                allInputs.forEach(input => {
+                    if (input.value) { // Only add to FormData if there's a value
+                        formData.append(input.name, input.value);
+                        hasDataToSave = true;
+                    }
+                });
+
+                if (!hasDataToSave) {
+                    alert("請至少輸入一筆健康數據才能儲存。");
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML = `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 請至少輸入一筆健康數據。</p>`;
+                    return;
+                }
+
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(`伺服器錯誤: ${response.statusText}`);
+                    return response.text(); // Assuming server sends back a simple text confirmation or error
+                }).then(data => {
+                    // Success message is handled by SocketIO 'update' event from server,
+                    // which will now also trigger loadTodaysHealthData().
+                    // No need to clear form fields here, as loadTodaysHealthData will repopulate them.
+                    // allInputs.forEach(input => input.value = ''); 
+                }).catch(error => {
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 儲存今日數據失敗: ${error.message}</p>`;
+                });
+            });
+        }
+    </script>
+</body>
+</html>
