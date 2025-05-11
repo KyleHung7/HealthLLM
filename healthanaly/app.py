@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from flask_login import login_required, current_user
 from auth import init_auth, get_user_upload_folder, load_user_settings, get_user_by_id
+from img_recognition import img_recognition_bp
 from health_analysis import (
     health_trend_analysis,
     answer_care_question,
@@ -34,6 +35,9 @@ if os.getenv('TUNNEL_MODE') == "True":
 
 # Initialize authentication
 init_auth(app)
+
+# Register Blueprints
+app.register_blueprint(img_recognition_bp) # Added blueprint registration
 
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
 
