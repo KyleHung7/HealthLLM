@@ -2,7 +2,7 @@ import os
 import threading
 import pandas as pd
 from flask import Flask, render_template, request, send_file, make_response, redirect, url_for, jsonify
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from flask_login import login_required, current_user
@@ -40,6 +40,21 @@ init_auth(app)
 app.register_blueprint(img_recognition_bp) # Added blueprint registration
 
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
+
+@socketio.on('connect')
+def handle_connect():
+    if current_user.is_authenticated:
+        join_room(current_user.id)
+        app.logger.info(f"SocketIO: Client {request.sid} joined room {current_user.id} for user {current_user.name}")
+    else:
+        app.logger.info(f"SocketIO: Anonymous client {request.sid} connected.")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    # Rooms are generally cleaned up automatically by Flask-SocketIO when a client disconnects.
+    # If explicit leave_room(current_user.id) were needed, current_user might not be reliably available here.
+    # Relying on automatic cleanup is standard.
+    app.logger.info(f"SocketIO: Client {request.sid} disconnected.")
 
 logLess = False
 if logLess:
@@ -273,12 +288,12 @@ def update_linked_health_data_generic(linked_user_id, records_data, data_type, c
             
         df.sort_values(by='Date', inplace=True)
         df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-        # Emit update to the specific linked user dashboard if possible, or a general success
-        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")} 資料已成功更新。', 'event_type': 'summary', 'target': f'linked_{data_type}'})
+        # Emit update to the current user who performed the action
+        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")} 資料已成功更新。', 'event_type': 'summary', 'target': f'linked_{data_type}'}, room=current_user.id)
         return jsonify({'success': True, 'message': f'{data_type.replace("_", " ")} 資料已成功更新。'})
     except Exception as e:
         app.logger.error(f"Error saving linked {data_type} data for user {linked_user_id}: {e}")
-        socketio.emit('update', {'message': f'❌ 更新連結帳戶 {data_type.replace("_", " ")} 資料時發生錯誤: {str(e)}', 'event_type': 'summary', 'target': f'linked_{data_type}'})
+        socketio.emit('update', {'message': f'❌ 更新連結帳戶 {data_type.replace("_", " ")} 資料時發生錯誤: {str(e)}', 'event_type': 'summary', 'target': f'linked_{data_type}'}, room=current_user.id)
         return jsonify({'success': False, 'message': f'儲存失敗: {str(e)}'}), 500
 
 @app.route('/update_linked_bp_data', methods=['POST'])
@@ -337,7 +352,7 @@ def validate_health_data(data, data_type):
     return None
 
 # Background task for saving health data
-def save_health_data_background(data_dict, data_type, user_folder, overwrite=False):
+def save_health_data_background(data_dict, data_type, user_folder, user_id, overwrite=False):
     try:
         # Convert form data to DataFrame
         data = {'Date': [data_dict['date']]}
@@ -406,9 +421,9 @@ def save_health_data_background(data_dict, data_type, user_folder, overwrite=Fal
                             'message': f'🟡 {data_type.replace("_", " ")} 當日資料已存在且與提交內容不同，是否覆蓋？',
                             'data': data_dict,
                             'data_type': data_type,
-                            'user_folder': user_folder, # Not strictly needed by client for this, but consistent
+                            'user_folder': user_folder, 
                             'event_type': 'summary'
-                        })
+                        }, room=user_id)
                         return # Wait for user confirmation via /overwrite_health_data
                 
                 # If overwrite is True, or if not prompting for overwrite (e.g. new data matches existing or only fills '無')
@@ -422,10 +437,10 @@ def save_health_data_background(data_dict, data_type, user_folder, overwrite=Fal
         new_df.sort_values(by='Date', inplace=True) # Keep CSV sorted by date
         new_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
         
-        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")}紀錄儲存成功', 'event_type': 'summary'})
+        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")}紀錄儲存成功', 'event_type': 'summary'}, room=user_id)
     except Exception as e:
-        app.logger.error(f"Error in save_health_data_background for {data_type}, user {user_folder}: {str(e)}")
-        socketio.emit('update', {'message': f"❌ {data_type.replace('_', ' ')}紀錄儲存錯誤: {str(e)}", 'event_type': 'summary'})
+        app.logger.error(f"Error in save_health_data_background for {data_type}, user {user_id} (folder {user_folder}): {str(e)}")
+        socketio.emit('update', {'message': f"❌ {data_type.replace('_', ' ')}紀錄儲存錯誤: {str(e)}", 'event_type': 'summary'}, room=user_id)
 
 # Background task for trend analysis
 def trend_background_task(file_path, user_id):
@@ -436,20 +451,20 @@ def trend_background_task(file_path, user_id):
         # Determine data_type based on CSV validation
         data_type = 'blood_pressure' if validate_bp_csv(df) else 'blood_sugar' if validate_sugar_csv(df) else None
         if not data_type:
-            socketio.emit('update', {'message': '❌ CSV 檔案格式不符合血壓或血糖分析要求', 'event_type': 'trend'})
+            socketio.emit('update', {'message': '❌ CSV 檔案格式不符合血壓或血糖分析要求', 'event_type': 'trend'}, room=user_id)
             return
 
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         clear_user_data_folder(user_id, "trend")
         result = health_trend_analysis(file_path, user_id, timestamp)
-        socketio.emit('update', {'message': '🟢 趨勢分析完成', 'event_type': 'trend'})
+        socketio.emit('update', {'message': '🟢 趨勢分析完成', 'event_type': 'trend'}, room=user_id)
         socketio.emit('trend_result', {
             'trend_output': result,
             'trend_url': f'/download_trend/{user_id}/{data_type}/{timestamp}',
             'event_type': 'trend'
-        })
+        }, room=user_id)
     except Exception as e:
-        socketio.emit('update', {'message': f"❌ 趨勢分析錯誤: {str(e)}", 'event_type': 'trend'})
+        socketio.emit('update', {'message': f"❌ 趨勢分析錯誤: {str(e)}", 'event_type': 'trend'}, room=user_id)
 
 # Save health data to CSV
 @app.route('/save_health_data', methods=['POST'])
@@ -486,10 +501,10 @@ def save_health_data():
             
             validation_error_bp = validate_health_data(bp_payload, 'blood_pressure')
             if validation_error_bp:
-                socketio.emit('update', {'message': f"❌ 血壓輸入錯誤: {validation_error_bp}", 'event_type': 'summary'})
+                socketio.emit('update', {'message': f"❌ 血壓輸入錯誤: {validation_error_bp}", 'event_type': 'summary'}, room=current_user.id)
             else:
-                socketio.emit('update', {'message': '🟢 血壓資料上傳成功，開始儲存...', 'event_type': 'summary'})
-                threading.Thread(target=save_health_data_background, args=(bp_payload, 'blood_pressure', user_folder)).start()
+                socketio.emit('update', {'message': '🟢 血壓資料上傳成功，開始儲存...', 'event_type': 'summary'}, room=current_user.id)
+                threading.Thread(target=save_health_data_background, args=(bp_payload, 'blood_pressure', user_folder, current_user.id)).start()
                 bp_processed_successfully = True
         
         if actual_sugar_data_present:
@@ -500,14 +515,14 @@ def save_health_data():
 
             validation_error_sugar = validate_health_data(sugar_payload, 'blood_sugar')
             if validation_error_sugar:
-                socketio.emit('update', {'message': f"❌ 血糖輸入錯誤: {validation_error_sugar}", 'event_type': 'summary'})
+                socketio.emit('update', {'message': f"❌ 血糖輸入錯誤: {validation_error_sugar}", 'event_type': 'summary'}, room=current_user.id)
             else:
-                socketio.emit('update', {'message': '🟢 血糖資料上傳成功，開始儲存...', 'event_type': 'summary'})
-                threading.Thread(target=save_health_data_background, args=(sugar_payload, 'blood_sugar', user_folder)).start()
+                socketio.emit('update', {'message': '🟢 血糖資料上傳成功，開始儲存...', 'event_type': 'summary'}, room=current_user.id)
+                threading.Thread(target=save_health_data_background, args=(sugar_payload, 'blood_sugar', user_folder, current_user.id)).start()
                 sugar_processed_successfully = True
 
         if not at_least_one_type_had_data:
-            socketio.emit('update', {'message': '⚠️ 未輸入任何健康數據。', 'event_type': 'summary'})
+            socketio.emit('update', {'message': '⚠️ 未輸入任何健康數據。', 'event_type': 'summary'}, room=current_user.id)
             return '未輸入任何健康數據。', 400
         
         # If at least one type had data, but neither was processed successfully due to validation errors
@@ -518,7 +533,7 @@ def save_health_data():
         return '資料已提交處理。', 200
     except Exception as e:
         app.logger.error(f"Error in save_health_data: {str(e)}")
-        socketio.emit('update', {'message': f"❌ 伺服器內部錯誤: {str(e)}", 'event_type': 'summary'})
+        socketio.emit('update', {'message': f"❌ 伺服器內部錯誤: {str(e)}", 'event_type': 'summary'}, room=current_user.id)
         return f'伺服器內部錯誤: {str(e)}', 500
 
 # API endpoint to get today's health data
@@ -587,11 +602,11 @@ def overwrite_health_data():
         import json
         data_dict = json.loads(data)
         
-        thread = threading.Thread(target=save_health_data_background, args=(data_dict, data_type, user_folder, True))
+        thread = threading.Thread(target=save_health_data_background, args=(data_dict, data_type, user_folder, current_user.id, True))
         thread.start()
         return '覆蓋資料已處理。', 200
     except Exception as e:
-        socketio.emit('update', {'message': f"❌ 覆蓋資料錯誤: {str(e)}", 'event_type': 'summary'})
+        socketio.emit('update', {'message': f"❌ 覆蓋資料錯誤: {str(e)}", 'event_type': 'summary'}, room=current_user.id)
         return f'覆蓋資料錯誤: {str(e)}', 500
 
 # Upload CSV for trend analysis
@@ -607,7 +622,7 @@ def upload_trend():
     file_path = os.path.join(user_folder, filename)
     file.save(file_path)
 
-    socketio.emit('update', {'message': '🟢 檔案上傳成功，開始趨勢分析...', 'event_type': 'trend'})
+    socketio.emit('update', {'message': '🟢 檔案上傳成功，開始趨勢分析...', 'event_type': 'trend'}, room=current_user.id)
     thread = threading.Thread(target=trend_background_task, args=(file_path, current_user.id))
     thread.start()
     return '檔案已上傳並開始處理。', 200
@@ -638,11 +653,11 @@ def upload_trend_linked():
         file.save(file_path)
     except Exception as e:
         app.logger.error(f"Error saving uploaded trend file for linked user {linked_user_id}: {e}")
-        socketio.emit('update', {'message': f"❌ 上傳趨勢分析檔案失敗: {str(e)}", 'event_type': 'trend', 'target': 'trend'})
+        socketio.emit('update', {'message': f"❌ 上傳趨勢分析檔案失敗: {str(e)}", 'event_type': 'trend', 'target': 'trend'}, room=current_user.id)
         return jsonify({'success': False, 'message': f'檔案儲存失敗: {str(e)}'}), 500
 
-    socketio.emit('update', {'message': '🟢 連結帳戶檔案上傳成功，開始趨勢分析...', 'event_type': 'trend', 'target': 'trend'})
-    # Use linked_user_id for the background task
+    socketio.emit('update', {'message': '🟢 連結帳戶檔案上傳成功，開始趨勢分析...', 'event_type': 'trend', 'target': 'trend'}, room=current_user.id)
+    # Use linked_user_id for the background task, so trend results go to the linked user
     thread = threading.Thread(target=trend_background_task, args=(file_path, linked_user_id))
     thread.start()
     return jsonify({'success': True, 'message': '連結帳戶檔案已上傳並開始處理。'}), 200
@@ -702,10 +717,10 @@ def ask_question():
     try:
         answer = answer_care_question(question)
         answer_html = mdToHtml(answer)
-        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question'})
+        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question'}, room=current_user.id)
         return '問題已處理', 200
     except Exception as e:
-        socketio.emit('update', {'message': f"❌ 問題回答錯誤: {str(e)}", 'event_type': 'question'})
+        socketio.emit('update', {'message': f"❌ 問題回答錯誤: {str(e)}", 'event_type': 'question'}, room=current_user.id)
     return '問題處理錯誤', 500
 
 # Answer caregiver questions for a LINKED account
@@ -731,11 +746,11 @@ def ask_question_linked():
         answer = answer_care_question(question) # Potentially pass linked_user_id if needed by the function
         answer_html = mdToHtml(answer)
         # The 'target' for socketio event might need adjustment if specific UI elements for linked Q&A exist
-        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question', 'target': 'question'})
+        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question', 'target': 'question'}, room=current_user.id)
         return jsonify({'success': True, 'message': '連結帳戶問題已處理'}), 200
     except Exception as e:
         app.logger.error(f"Error answering linked question for user {linked_user_id}: {e}")
-        socketio.emit('update', {'message': f"❌ 連結帳戶問題回答錯誤: {str(e)}", 'event_type': 'question', 'target': 'question'})
+        socketio.emit('update', {'message': f"❌ 連結帳戶問題回答錯誤: {str(e)}", 'event_type': 'question', 'target': 'question'}, room=current_user.id)
         return jsonify({'success': False, 'message': '問題處理錯誤'}), 500
 
 # Start server
