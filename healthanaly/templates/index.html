@@ -163,14 +163,20 @@
             padding: 1rem;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             z-index: 1000;
+            grid-template-columns: repeat(3, 1fr); /* 3 columns */
+            gap: 10px;
         }
 
-        .number-pad button {
-            width: 3rem;
-            height: 3rem;
-            margin: 0.2rem;
-            font-size: 1.2rem;
-            background-color: #205e60;
+        
+        .number-button {
+        display: flex;
+        justify-content: center; /* Centers horizontally */
+        align-items: center;     /* Centers vertically */
+        width: 50px;             /* Set a fixed width */
+        height: 50px;            /* Set a fixed height */
+        font-size: 20px;         /* Adjust font size */
+        border: 1px solid #ccc;  /* Optional: Visualize button boundaries */
+        box-sizing: border-box;  /* Ensures padding doesn’t increase size */
         }
 
         .number-pad button:hover {
@@ -316,19 +322,19 @@
         <div id="summary-status"></div>
 
         <!-- Number Pad -->
-        <div id="number-pad" class="number-pad">
-            <button onclick="appendNumber('1')">1</button>
-            <button onclick="appendNumber('2')">2</button>
-            <button onclick="appendNumber('3')">3</button><br>
-            <button onclick="appendNumber('4')">4</button>
-            <button onclick="appendNumber('5')">5</button>
-            <button onclick="appendNumber('6')">6</button><br>
-            <button onclick="appendNumber('7')">7</button>
-            <button onclick="appendNumber('8')">8</button>
-            <button onclick="appendNumber('9')">9</button><br>
-            <button onclick="appendNumber('0')">0</button>
-            <button onclick="clearNumber()">C</button>
-            <button onclick="closeNumberPad()">OK</button>
+        <div class="number-pad" id="number-pad">
+            <button class="number-button">1</button>
+            <button class="number-button">2</button>
+            <button class="number-button">3</button>
+            <button class="number-button">4</button>
+            <button class="number-button">5</button>
+            <button class="number-button">6</button>
+            <button class="number-button">7</button>
+            <button class="number-button">8</button>
+            <button class="number-button">9</button>
+            <button class="number-button">0</button>
+            <button class="number-button">C</button>
+            <button class="number-button">OK</button>
         </div>
     </div>
 
@@ -383,15 +389,17 @@
     </div>
     {% endif %}
 
-    <script>
+            <script>
         {% if current_user.is_authenticated %}
         const socket = io();
 
         // Set current date for both tables
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('bp-date').value = today;
-            document.getElementById('sugar-date').value = today;
+            const bpDateElem = document.getElementById('bp-date');
+            const sugarDateElem = document.getElementById('sugar-date');
+            if (bpDateElem) bpDateElem.value = today;
+            if (sugarDateElem) sugarDateElem.value = today;
         });
 
         // Number pad functionality
@@ -410,15 +418,55 @@
                 // On desktop, show custom number pad
                 activeInput = this;
                 const rect = this.getBoundingClientRect();
-                numberPad.style.display = 'block';
-                numberPad.style.left = `${rect.left}px`;
-                numberPad.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                
+                if (numberPad) {
+                    numberPad.style.display = 'grid';
+                    numberPad.style.left = `${rect.left}px`;
+                    numberPad.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                } else {
+                    console.error("Number pad element not found! Make sure it has id='number-pad'.");
+                }
             });
         });
 
+        // Add event listeners to number pad buttons
+        if (numberPad && !isMobile) { // Add listeners only if numberPad exists and not on mobile
+            const numberButtons = numberPad.querySelectorAll('.number-button');
+            numberButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const buttonValue = this.textContent.trim();
+
+                    if (activeInput) { // Make sure an input field is active
+                        if (!isNaN(parseInt(buttonValue)) && buttonValue.length === 1) { // Ensure it's a single digit number
+                            appendNumber(buttonValue);
+                        } else if (buttonValue === 'C') {
+                            clearNumber();
+                        } else if (buttonValue === 'OK') {
+                            closeNumberPad();
+                        }
+                    }
+                });
+            });
+        }
+
+
         // Close number pad when clicking outside
         document.addEventListener('click', function(e) {
-            if (!isMobile && activeInput && !numberPad.contains(e.target) && !e.target.classList.contains('bp-input') && !e.target.classList.contains('sugar-input')) {
+            // Check if the click is outside the number pad AND outside an input that would open it
+            if (!isMobile && activeInput && numberPad && !numberPad.contains(e.target) && 
+                !e.target.classList.contains('bp-input') && !e.target.classList.contains('sugar-input')) {
+                
+                // Validate input before closing if it wasn't closed by "OK"
+                // (The "OK" button calls closeNumberPad which includes validation)
+                if (activeInput) { // Check activeInput again as it might have been nulled by closeNumberPad
+                    const min = parseFloat(activeInput.min);
+                    const max = parseFloat(activeInput.max);
+                    const value = parseFloat(activeInput.value);
+                    if (activeInput.value && (isNaN(value) || value < min || value > max)) {
+                        alert(`請輸入 ${min} 到 ${max} 之間的數值`);
+                        activeInput.value = ''; // Clear invalid input
+                    }
+                }
                 numberPad.style.display = 'none';
                 activeInput = null;
             }
@@ -443,10 +491,12 @@
                 const value = parseFloat(activeInput.value);
                 if (activeInput.value && (isNaN(value) || value < min || value > max)) {
                     alert(`請輸入 ${min} 到 ${max} 之間的數值`);
-                    activeInput.value = '';
+                    activeInput.value = ''; // Clear invalid input
                 }
             }
-            numberPad.style.display = 'none';
+            if (numberPad) {
+                numberPad.style.display = 'none';
+            }
             activeInput = null;
         }
 
@@ -467,12 +517,15 @@
 
         // Handle update messages
         socket.on('update', function(data) {
-            const statusDiv = data.event_type === 'summary' ? 'summary-status' :
+            const statusDivId = data.event_type === 'summary' ? 'summary-status' :
                             data.event_type === 'trend' ? 'trend-status' :
                             'question-status';
-            const statusClass = data.message.includes('❌') ? 'status-error' : 'status-success';
-            document.getElementById(statusDiv).innerHTML += `<p class="${statusClass}">${data.message}</p>`;
-            document.getElementById(statusDiv).scrollTop = document.getElementById(statusDiv).scrollHeight;
+            const statusDiv = document.getElementById(statusDivId);
+            if (statusDiv) {
+                const statusClass = data.message.includes('❌') ? 'status-error' : 'status-success';
+                statusDiv.innerHTML += `<p class="${statusClass}">${data.message}</p>`;
+                statusDiv.scrollTop = statusDiv.scrollHeight;
+            }
         });
 
         // Handle overwrite confirmation
@@ -486,22 +539,31 @@
                     body: formData
                 }).then(response => response.text())
                   .then(result => {
-                      document.getElementById('summary-status').innerHTML += '<p class="status-success">🟢 資料已覆蓋</p>';
+                      const summaryStatus = document.getElementById('summary-status');
+                      if (summaryStatus) summaryStatus.innerHTML += '<p class="status-success">🟢 資料已覆蓋</p>';
                   })
                   .catch(error => {
-                      document.getElementById('summary-status').innerHTML += `<p class="status-error">❌ 覆蓋失敗: ${error}</p>`;
+                      const summaryStatus = document.getElementById('summary-status');
+                      if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 覆蓋失敗: ${error}</p>`;
                   });
             } else {
-                document.getElementById('summary-status').innerHTML += '<p class="status-error">❌ 取消覆蓋資料</p>';
+                const summaryStatus = document.getElementById('summary-status');
+                if (summaryStatus) summaryStatus.innerHTML += '<p class="status-error">❌ 取消覆蓋資料</p>';
             }
         });
 
         // Handle trend result
         socket.on('trend_result', function(data) {
             if (data.event_type === 'trend') {
-                document.getElementById('trend-output').innerHTML = data.trend_output.replace(/\n/g, '<br>');
-                if (data.trend_url) {
-                    document.getElementById('trend-download').innerHTML = `<a href="${data.trend_url}" class="download-btn">📊 下載趨勢圖</a>`;
+                const trendOutput = document.getElementById('trend-output');
+                const trendDownload = document.getElementById('trend-download');
+                if (trendOutput) trendOutput.innerHTML = data.trend_output.replace(/\n/g, '<br>');
+                if (trendDownload) {
+                    if (data.trend_url) {
+                        trendDownload.innerHTML = `<a href="${data.trend_url}" class="download-btn">📊 下載趨勢圖</a>`;
+                    } else {
+                        trendDownload.innerHTML = '';
+                    }
                 }
             }
         });
@@ -509,88 +571,123 @@
         // Handle question result
         socket.on('question_result', function(data) {
             if (data.event_type === 'question') {
-                document.getElementById('question-output').innerHTML = data.answer.replace(/\n/g, '<br>');
+                const questionOutput = document.getElementById('question-output');
+                if (questionOutput) questionOutput.innerHTML = data.answer.replace(/\n/g, '<br>');
             }
         });
 
         // Blood pressure form submission
-        document.getElementById('bp-summary-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const inputs = document.querySelectorAll('#bp-table input:not([id="bp-date"])');
-            if (!validateFormInputs(inputs)) return;
-            
-            const formData = new FormData();
-            formData.append('date', document.getElementById('bp-date').value);
-            inputs.forEach(input => {
-                formData.append(input.name, input.value || '無');
+        const bpForm = document.getElementById('bp-summary-form');
+        if (bpForm) {
+            bpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const inputs = document.querySelectorAll('#bp-table input.bp-input');
+                if (!validateFormInputs(inputs)) return;
+                
+                const formData = new FormData();
+                const bpDateInput = document.getElementById('bp-date');
+                if (bpDateInput) formData.append('date', bpDateInput.value);
+                
+                inputs.forEach(input => {
+                    formData.append(input.name, input.value || '無');
+                });
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(response.statusText);
+                    return response.text();
+                }).then(data => {
+                    console.log("BP data saved:", data);
+                }).catch(error => {
+                    const summaryStatus = document.getElementById('summary-status');
+                    if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 儲存血壓紀錄失敗: ${error}</p>`;
+                });
             });
-            fetch('/save_health_data', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (!response.ok) throw new Error(response.statusText);
-                return response.text();
-            }).then(data => {
-                // Success message handled by SocketIO
-            }).catch(error => {
-                document.getElementById('summary-status').innerHTML += `<p class="status-error">❌ 儲存失敗: ${error}</p>`;
-            });
-        });
+        }
 
         // Blood sugar form submission
-        document.getElementById('sugar-summary-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const inputs = document.querySelectorAll('#sugar-table input:not([id="sugar-date"])');
-            if (!validateFormInputs(inputs)) return;
-            
-            const formData = new FormData();
-            formData.append('date', document.getElementById('sugar-date').value);
-            inputs.forEach(input => {
-                formData.append(input.name, input.value || '無');
+        const sugarForm = document.getElementById('sugar-summary-form');
+        if (sugarForm) {
+            sugarForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const inputs = document.querySelectorAll('#sugar-table input.sugar-input');
+                if (!validateFormInputs(inputs)) return;
+                
+                const formData = new FormData();
+                const sugarDateInput = document.getElementById('sugar-date');
+                if (sugarDateInput) formData.append('date', sugarDateInput.value);
+
+                inputs.forEach(input => {
+                    formData.append(input.name, input.value || '無');
+                });
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(response.statusText);
+                    return response.text();
+                }).then(data => {
+                    console.log("Sugar data saved:", data);
+                }).catch(error => {
+                    const summaryStatus = document.getElementById('summary-status');
+                    if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 儲存血糖紀錄失敗: ${error}</p>`;
+                });
             });
-            fetch('/save_health_data', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (!response.ok) throw new Error(response.statusText);
-                return response.text();
-            }).then(data => {
-                // Success message handled by SocketIO
-            }).catch(error => {
-                document.getElementById('summary-status').innerHTML += `<p class="status-error">❌ 儲存失敗: ${error}</p>`;
-            });
-        });
+        }
 
         // Trend form submission
-        document.getElementById('trend-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('file', document.getElementById('trend-file').files[0]);
-            fetch('/upload_trend', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text())
-              .then(data => console.log('Trend upload started'))
-              .catch(error => {
-                  document.getElementById('trend-status').innerHTML += `<p class="status-error">❌ 上傳失敗: ${error}</p>`;
-              });
-        });
+        const trendForm = document.getElementById('trend-form');
+        if (trendForm) {
+            trendForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                const trendFileInput = document.getElementById('trend-file');
+                if (trendFileInput && trendFileInput.files[0]) {
+                    formData.append('file', trendFileInput.files[0]);
+                    fetch('/upload_trend', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => response.text())
+                    .then(data => console.log('Trend upload started'))
+                    .catch(error => {
+                        const trendStatus = document.getElementById('trend-status');
+                        if (trendStatus) trendStatus.innerHTML += `<p class="status-error">❌ 上傳趨勢檔案失敗: ${error}</p>`;
+                    });
+                } else {
+                    const trendStatus = document.getElementById('trend-status');
+                    if (trendStatus) trendStatus.innerHTML += `<p class="status-error">❌ 請選擇一個檔案</p>`;
+                }
+            });
+        }
 
         // Question form submission
-        document.getElementById('question-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('question', document.getElementById('question').value);
-            fetch('/ask_question', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text())
-              .then(data => console.log('Question submitted'))
-              .catch(error => {
-                  if (error.message.toLowerCase() === 'failed to fetch') location.reload();
-                  document.getElementById('question-status').innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
-              });
-        });
+        const questionForm = document.getElementById('question-form');
+        if (questionForm) {
+            questionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                const questionInput = document.getElementById('question');
+                if (questionInput && questionInput.value.trim() !== "") {
+                    formData.append('question', questionInput.value);
+                    fetch('/ask_question', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => response.text())
+                    .then(data => console.log('Question submitted'))
+                    .catch(error => {
+                        if (error.message.toLowerCase() === 'failed to fetch') {
+                           console.error("Fetch failed, possibly network issue or server down.");
+                        }
+                        const questionStatus = document.getElementById('question-status');
+                        if (questionStatus) questionStatus.innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
+                    });
+                } else {
+                    const questionStatus = document.getElementById('question-status');
+                    if (questionStatus) questionStatus.innerHTML += `<p class="status-error">❌ 請輸入問題</p>`;
+                }
+            });
+        }
         {% endif %}
     </script>
 </body>

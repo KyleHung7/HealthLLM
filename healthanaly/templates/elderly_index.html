@@ -89,6 +89,30 @@
             color: #2c7a7b;
             opacity: 0.7;
         }
+        .status-card-green {
+            background-color: #28a745 !important; /* Bootstrap success green */
+            border-color: #28a745 !important;
+        }
+        .status-card-red {
+            background-color: #dc3545 !important; /* Bootstrap danger red */
+            border-color: #dc3545 !important;
+        }
+        .status-card-green {
+            background-color: #28a745 !important; /* Bootstrap success green */
+            border-color: #28a745 !important;
+        }
+        .status-card-red {
+            background-color: #dc3545 !important; /* Bootstrap danger red */
+            border-color: #dc3545 !important;
+        }
+        .status-card-green {
+            background-color: #28a745 !important; /* Bootstrap success green */
+            border-color: #28a745 !important;
+        }
+        .status-card-red {
+            background-color: #dc3545 !important; /* Bootstrap danger red */
+            border-color: #dc3545 !important;
+        }
     </style>
 </head>
 <body>
@@ -275,6 +299,31 @@
                 <button type="submit" class="btn btn-custom text-white mt-3">💾 儲存今日數據</button>
             </form>
             <div id="summary-status-elderly" class="mt-3" style="font-size: 1.25rem;"></div>
+        </div>
+
+        <!-- Health Status Cards -->
+        <div class="card mt-3">
+            <h3>今日健康狀態</h3>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div id="bp-status-card" class="card text-white text-center" style="display: none; font-size: 1.5rem;">
+                        <div class="card-body">
+                            <h5 class="card-title" style="font-size: 2rem;">血壓狀態</h5>
+                            <p id="bp-status-text" class="card-text" style="font-size: 1.7rem;"></p>
+                            <p id="bp-normal-range" class="card-text" style="font-size: 1.5rem; opacity: 0.8;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div id="bs-status-card" class="card text-white text-center" style="display: none; font-size: 1.5rem;">
+                        <div class="card-body">
+                            <h5 class="card-title" style="font-size: 2rem;">血糖狀態</h5>
+                            <p id="bs-status-text" class="card-text" style="font-size: 1.7rem;"></p>
+                            <p id="bs-normal-range" class="card-text" style="font-size: 1.5rem; opacity: 0.8;"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card">
@@ -663,6 +712,101 @@
                 }).catch(error => {
                     if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 儲存今日數據失敗: ${error.message}</p>`;
                 });
+            });
+        }
+
+        function showHealthStatus() {
+            const bpSystolic = parseFloat(document.querySelector('input[name="morning_systolic"]').value) || 0;
+            const bpDiastolic = parseFloat(document.querySelector('input[name="morning_diastolic"]').value) || 0;
+            const bsFasting = parseFloat(document.querySelector('input[name="morning_fasting"]').value) || 0;
+            const bsPostprandial = parseFloat(document.querySelector('input[name="morning_postprandial"]').value) || 0;
+
+            const bpStatusCard = document.getElementById('bp-status-card');
+            const bsStatusCard = document.getElementById('bs-status-card');
+            const bpStatusText = document.getElementById('bp-status-text');
+            const bsStatusText = document.getElementById('bs-status-text');
+            const bpNormalRange = document.getElementById('bp-normal-range');
+            const bsNormalRange = document.getElementById('bs-normal-range');
+
+            let bpStatus = '';
+            let bsStatus = '';
+
+            // Blood Pressure Status Logic
+            if (bpSystolic < 120 && bpDiastolic < 80) {
+                bpStatus = '達標';
+                bpStatusCard.className = 'card text-white text-center status-card-green';
+            } else {
+                bpStatus = '未達標';
+                bpStatusCard.className = 'card text-white text-center status-card-red';
+            }
+
+            // Blood Sugar Status Logic (using fasting as primary, postprandial if fasting is 0)
+            if (bsFasting > 0) {
+                if (bsFasting < 100) {
+                    bsStatus = '達標';
+                    bsStatusCard.className = 'card text-white text-center status-card-green';
+                } else {
+                    bsStatus = '未達標';
+                    bsStatusCard.className = 'card text-white text-center status-card-red';
+                }
+            } else if (bsPostprandial > 0) {
+                if (bsPostprandial < 140) {
+                    bsStatus = '達標';
+                    bsStatusCard.className = 'card text-white text-center status-card-green';
+                } else {
+                    bsStatus = '未達標';
+                    bsStatusCard.className = 'card text-white text-center status-card-red';
+                }
+            } else {
+                bsStatus = '無資料';
+                bsStatusCard.className = 'card text-white text-center'; // No color
+            }
+
+            bpStatusText.innerText = `血壓狀態: ${bpStatus}`;
+            bsStatusText.innerText = `血糖狀態: ${bsStatus}`;
+
+            bpNormalRange.innerText = '正常範圍: 收縮壓 < 120 mmHg 且 舒張壓 < 80 mmHg';
+            bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 或 餐後血糖 < 140 mg/dL';
+
+            bpStatusCard.style.display = bpSystolic > 0 || bpDiastolic > 0 ? 'block' : 'none';
+            bsStatusCard.style.display = bsFasting > 0 || bsPostprandial > 0 ? 'block' : 'none';
+        }
+
+        if (healthDataFormElderly) {
+            healthDataFormElderly.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const allInputs = document.querySelectorAll('#timeOfDayTabContent .health-input');
+                if (!validateFormInputsElderly(allInputs)) return;
+                
+                const formData = new FormData();
+                const recordDateInput = document.getElementById('record-date-elderly');
+                if (recordDateInput) formData.append('date', recordDateInput.value);
+                
+                let hasDataToSave = false;
+                allInputs.forEach(input => {
+                    if (input.value) { // Only add to FormData if there's a value
+                        formData.append(input.name, input.value);
+                        hasDataToSave = true;
+                    }
+                });
+
+                if (!hasDataToSave) {
+                    alert("請至少輸入一筆健康數據才能儲存。");
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML = `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 請至少輸入一筆健康數據。</p>`;
+                    return;
+                }
+
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(`伺服器錯誤: ${response.statusText}`);
+                    return response.text(); // Assuming server sends back a simple text confirmation or error
+                }).catch(error => {
+                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 儲存今日數據失敗: ${error.message}</p>`;
+                });
+                showHealthStatus();
             });
         }
     </script>

@@ -228,3 +228,13 @@ def answer_care_question(user_question):
     prompt = rag_prompt_template.format(question=user_question.strip())
     response = model.generate_content(prompt)
     return response.text.strip()
+
+def is_blood_pressure_normal(systolic, diastolic):
+    return systolic < 120 and diastolic < 80
+
+def is_blood_sugar_normal(fasting=None, postprandial=None):
+    if fasting is not None:
+        return fasting < 100
+    elif postprandial is not None:
+        return postprandial < 140
+    return False
