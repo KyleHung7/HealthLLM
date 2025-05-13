@@ -2,3 +2,4 @@ __pycache__/
 .env
 users/
 tmp/
+gmail_credentials.json
