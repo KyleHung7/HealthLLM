@@ -174,7 +174,8 @@ def account_binding():
         if user:
             if send_binding_request(email, current_user.email):
                 store_binding_request(email, current_user.id, current_user.email)
-                return f'Binding request sent to {email}', 200
+                # Redirect to the binding page after sending the request
+                return redirect(url_for('auth.binding'))
             else:
                 return 'Failed to send binding request', 500
         else:
