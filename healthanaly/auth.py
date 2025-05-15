@@ -145,19 +145,11 @@ def save_account_role():
     account_role = request.json.get('account_role')
     if account_role not in ['elderly', 'general']:
         return 'Invalid account role', 400
-
+        
     user_settings = load_user_settings(current_user.id)
     user_settings['account_role'] = account_role
-
-    # Save initial health status if the role is elderly
-    if account_role == 'elderly':
-        initial_bp_status = request.json.get('initial_bp_status')
-        initial_bs_status = request.json.get('initial_bs_status')
-        user_settings['initial_bp_status'] = initial_bp_status
-        user_settings['initial_bs_status'] = initial_bs_status
-
     save_user_settings(current_user.id, user_settings)
-    return 'Account role and initial status saved successfully', 200
+    return 'Account role saved successfully', 200
 
 @auth_bp.route('/binding/add', methods=['GET', 'POST'])
 @login_required

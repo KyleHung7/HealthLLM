@@ -126,6 +126,10 @@
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+
             header {
                 padding: 0.75rem;
                 margin-bottom: 1rem;
@@ -197,19 +201,13 @@
                     <p>可查看綁定長者數據</p>
                 </div>
             </div>
-
-           
-
+            
             <button id="confirm-btn" disabled onclick="confirmRole()">確認選擇</button>
         </div>
     </div>
 
     <script>
         let selectedRole = null;
-        const healthStatusForm = document.getElementById('health-status-form');
-        const confirmBtn = document.getElementById('confirm-btn');
-        const bpStatusSelect = document.getElementById('blood-pressure-status');
-        const bsStatusSelect = document.getElementById('blood-sugar-status');
         
         function selectRole(role) {
             selectedRole = role;
@@ -217,40 +215,25 @@
                 el.classList.remove('selected');
             });
             event.currentTarget.classList.add('selected');
-            confirmBtn.disabled = false;
-
-            healthStatusForm.style.display = 'block';
+            document.getElementById('confirm-btn').disabled = false;
         }
-
+        
         function confirmRole() {
             if (!selectedRole) return;
             
-            const requestBody = {
-                account_role: selectedRole
-            };
-
-            if (selectedRole === 'elderly') {
-                requestBody.initial_bp_status = bpStatusSelect.value;
-                requestBody.initial_bs_status = bsStatusSelect.value;
-            }
-
             fetch('/auth/save_account_role', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify({
+                    account_role: selectedRole
+                })
             })
             .then(response => {
                 if (response.ok) {
                     window.location.href = '/';
-                } else {
-                    // Handle potential errors
-                    console.error('Failed to save account role and initial status');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
             });
         }
     </script>
