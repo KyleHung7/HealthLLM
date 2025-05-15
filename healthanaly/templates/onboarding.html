@@ -18,7 +18,7 @@
             font-family: 'Noto Sans TC', sans-serif;
             background: #f0f4f8;
             color: #333;
-            padding: 1rem;
+            padding: 2rem;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -202,50 +202,7 @@
                 </div>
             </div>
 
-            <!-- Initial Health Status Form (initially hidden) -->
-            <div id="health-status-form" style="display: none; text-align: left; margin-top: 1.5rem;">
-                <h3>請填寫您的初始健康狀況</h3>
-                <div style="margin-bottom: 1rem;">
-                    <label for="blood-pressure-status">血壓狀況:</label>
-                    <select id="blood-pressure-status" name="blood_pressure_status" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; margin-left: 0.5rem;">
-                        <option value="normal">正常</option>
-                        <option value="elevated">高血壓前期</option>
-                        <option value="stage1">高血壓第一期</option>
-                        <option value="stage2">高血壓第二期</option>
-                        <option value="crisis">高血壓危象</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="blood-sugar-status">血糖狀況:</label>
-                    <select id="blood-sugar-status" name="blood_sugar_status" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; margin-left: 0.5rem;">
-                        <option value="normal">正常</option>
-                        <option value="prediabetes">糖尿病前期</option>
-                        <option value="diabetes">糖尿病</option>
-                    </select>
-                </div>
-                <style>
-                    #health-status-form {
-                        width: 80%;
-                        margin: 1.5rem auto;
-                        text-align: center;
-                    }
-
-                    #health-status-form h3 {
-                        font-size: 1.5rem;
-                        margin-bottom: 1rem;
-                    }
-
-                    #health-status-form label {
-                        font-size: 1.2rem;
-                        margin-right: 0.5rem;
-                    }
-
-                    #health-status-form select {
-                        font-size: 1.2rem;
-                        padding: 0.5rem;
-                    }
-                </style>
-            </div>
+           
 
             <button id="confirm-btn" disabled onclick="confirmRole()">確認選擇</button>
         </div>

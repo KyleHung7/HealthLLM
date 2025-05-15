@@ -68,22 +68,18 @@
         }
         ul li {
             font-size: 1.2rem;
-            /* padding: 0.5rem 0; */
         }
         .container {
             padding: 1rem;
         }
-
         input[type="number"] {
             font-size: 2rem !important;
             font-weight: 700;
             color: #064f40;
         }
-
         .table>:not(caption)>*>* {
             color: #2c7a7b;
         }
-
         .fs-small {
             font-size: small;
             color: #2c7a7b;
@@ -97,21 +93,13 @@
             background-color: #dc3545 !important; /* Bootstrap danger red */
             border-color: #dc3545 !important;
         }
-        .status-card-green {
-            background-color: #28a745 !important; /* Bootstrap success green */
-            border-color: #28a745 !important;
+        .warning-text {
+            color: #dc3545; /* Bootstrap danger red */
+            font-size: 1.5rem;
+            margin-top: 0.5rem;
         }
-        .status-card-red {
-            background-color: #dc3545 !important; /* Bootstrap danger red */
-            border-color: #dc3545 !important;
-        }
-        .status-card-green {
-            background-color: #28a745 !important; /* Bootstrap success green */
-            border-color: #28a745 !important;
-        }
-        .status-card-red {
-            background-color: #dc3545 !important; /* Bootstrap danger red */
-            border-color: #dc3545 !important;
+        #health-status-card {
+            display: none; /* Initially hidden */
         }
     </style>
 </head>
@@ -120,7 +108,6 @@
         <h1>🧠 健康管理系統</h1>
         <p>簡單易用，守護您的健康 💖</p>
     </header>
-
     <div class="container">
         <div class="card">
             <h3>📝 健康紀錄輸入</h3>
@@ -128,7 +115,6 @@
                 <label for="record-date-elderly" style="font-size: 1.5rem; display: block; margin-bottom: 0.5rem;">日期：</label>
                 <input type="text" id="record-date-elderly" class="form-control form-control-lg" readonly style="font-size: 1.25rem; max-width: 300px;">
             </div>
-
             <ul class="nav nav-tabs nav-fill" id="timeOfDayTab" role="tablist" style="margin-bottom: 1rem;">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="morning-tab-btn" data-bs-toggle="tab" data-bs-target="#morning-tab-pane" type="button" role="tab" aria-controls="morning-tab-pane" aria-selected="true">☀️ 早上</button>
@@ -140,7 +126,6 @@
                     <button class="nav-link" id="evening-tab-btn" data-bs-toggle="tab" data-bs-target="#evening-tab-pane" type="button" role="tab" aria-controls="evening-tab-pane" aria-selected="false">🌙 晚上</button>
                 </li>
             </ul>
-
             <form id="health-data-form-elderly">
                 <div class="tab-content" id="timeOfDayTabContent">
                     <!-- Morning Tab Pane -->
@@ -193,7 +178,6 @@
                             </tbody>
                         </table>
                     </div>
-
                     <!-- Noon Tab Pane -->
                     <div class="tab-pane fade" id="noon-tab-pane" role="tabpanel" aria-labelledby="noon-tab-btn" tabindex="0">
                         <div class="d-flex justify-content-between align-items-center">
@@ -244,7 +228,6 @@
                             </tbody>
                         </table>
                     </div>
-
                     <!-- Evening Tab Pane -->
                     <div class="tab-pane fade" id="evening-tab-pane" role="tabpanel" aria-labelledby="evening-tab-btn" tabindex="0">
                         <div class="d-flex justify-content-between align-items-center">
@@ -296,13 +279,13 @@
                         </table>
                     </div>
                 </div>
+                <p id="health-risk-text" class="card-text text-danger" style="font-size: 1.7rem;"></p>
                 <button type="submit" class="btn btn-custom text-white mt-3">💾 儲存今日數據</button>
             </form>
             <div id="summary-status-elderly" class="mt-3" style="font-size: 1.25rem;"></div>
         </div>
-
         <!-- Health Status Cards -->
-        <div class="card mt-3">
+        <div id="health-status-card" class="card mt-3">
             <h3>今日健康狀態</h3>
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -324,20 +307,17 @@
                     </div>
                 </div>
             </div>
+            <p id="health-warnings" class="warning-text"></p>
         </div>
-
         <div class="card">
             <h3>主要功能</h3>
             <button class="btn btn-custom text-white" onclick="location.href='/auth/profile'">
                 查看個人資料
             </button>
         </div>
-
     </div>
-
     <!-- Hidden file input for camera scan -->
     <input type="file" id="camera-file-input" accept="image/*" capture="environment" style="display: none;">
-
     <!-- Confirmation Modal -->
     <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -360,7 +340,6 @@
             </div>
         </div>
     </div>
-
     <!-- Bootstrap JS and Popper.js -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
@@ -370,41 +349,62 @@
             const now = new Date();
             const currentHour = now.getHours();
             let activeTabId = 'morning-tab-btn'; // Default to morning
-
             if (currentHour >= 12 && currentHour <= 17) { // Noon: 12 PM to 5:59 PM
                 activeTabId = 'noon-tab-btn';
             } else if (currentHour >= 18 || (currentHour >= 0 && currentHour <= 5)) { // Evening: 6 PM to 5:59 AM
                 activeTabId = 'evening-tab-btn';
             }
-            // Morning is 6 AM to 11:59 AM, covered by default or if other conditions fail
-
             const tabElement = document.getElementById(activeTabId);
             if (tabElement) {
                 const tab = new bootstrap.Tab(tabElement);
                 tab.show();
             }
         }
-
+        function updateHealthRisk() {
+            const systolic = parseFloat(document.querySelector('input[name="morning_systolic"]').value) ||
+                             parseFloat(document.querySelector('input[name="noon_systolic"]').value) ||
+                             parseFloat(document.querySelector('input[name="evening_systolic"]').value) || 0;
+            const diastolic = parseFloat(document.querySelector('input[name="morning_diastolic"]').value) ||
+                              parseFloat(document.querySelector('input[name="noon_diastolic"]').value) ||
+                              parseFloat(document.querySelector('input[name="evening_diastolic"]').value) || 0;
+            const fasting = parseFloat(document.querySelector('input[name="morning_fasting"]').value) ||
+                             parseFloat(document.querySelector('input[name="noon_fasting"]').value) ||
+                             parseFloat(document.querySelector('input[name="evening_fasting"]').value) || 0;
+            const postprandial = parseFloat(document.querySelector('input[name="morning_postprandial"]').value) ||
+                                  parseFloat(document.querySelector('input[name="noon_postprandial"]').value) ||
+                                  parseFloat(document.querySelector('input[name="evening_postprandial"]').value) || 0;
+            let riskText = "";
+            if (systolic >= 180 || diastolic >= 120) {
+                riskText = "可能高血壓危象";
+            } else if (systolic >= 140 && systolic <= 179 || diastolic >= 90 && diastolic <= 119) {
+                riskText = "可能高血壓第二期";
+            } else if (systolic >= 130 && systolic <= 139 || diastolic >= 80 && diastolic <= 89) {
+                riskText = "可能高血壓第一期";
+            } else if (systolic >= 120 && systolic <= 129 && diastolic < 80) {
+                riskText = "可能高血壓前期";
+            } else if (fasting >= 126 || postprandial >= 200) {
+                riskText = "可能糖尿病";
+            } else if (fasting >= 100 && fasting <= 125 || postprandial >= 140 && postprandial <= 199) {
+                riskText = "可能糖尿病前期";
+            }
+            document.getElementById('health-risk-text').innerText = riskText;
+        }
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
             const recordDateInput = document.getElementById('record-date-elderly');
             if (recordDateInput) recordDateInput.value = today;
-            
             setActiveTabByTime();
             loadTodaysHealthData(); // Fetch and populate today's data
-
             // Initialize Bootstrap tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             });
-
             // Camera Scan Button Listeners
             const cameraScanButtons = document.querySelectorAll('.camera-scan-btn');
             const cameraFileInput = document.getElementById('camera-file-input');
             let currentTargetField = ''; // e.g., 'morning_systolic' or 'morning_fasting'
             let currentScanType = ''; // 'bp', 'fasting', 'postprandial'
-
             cameraScanButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     if (this.dataset.targetField) { // Individual BS scan button
@@ -418,7 +418,6 @@
                     cameraFileInput.click();
                 });
             });
-
             cameraFileInput.addEventListener('change', function(event) {
                 const file = event.target.files[0];
                 if (file) {
@@ -427,14 +426,18 @@
                 }
                 this.value = null; // Reset file input
             });
+            // Initialize health risk updates
+            updateHealthRisk();
+            const healthInputs = document.querySelectorAll('.health-input');
+            healthInputs.forEach(input => {
+                input.addEventListener('input', updateHealthRisk);
+            });
         });
-
         function handleImageUpload(file, targetIdentifier, scanType) { // targetIdentifier can be a prefix (for BP) or a specific field name (for BS)
             const scannedValuesContainer = document.getElementById('scanned-values-container');
             const confirmFillBtn = document.getElementById('confirm-fill-btn');
             const confirmationModalEl = document.getElementById('confirmationModal');
             const confirmationModal = bootstrap.Modal.getInstance(confirmationModalEl) || new bootstrap.Modal(confirmationModalEl);
-
             // Show loading indicator in modal
             scannedValuesContainer.innerHTML = `
                 <div class="d-flex align-items-center">
@@ -443,19 +446,16 @@
                 </div>`;
             confirmFillBtn.style.display = 'none'; // Hide confirm button during loading
             confirmationModal.show();
-
             const reader = new FileReader();
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-
                     const MAX_WIDTH = 1024;
                     const MAX_HEIGHT = 1024;
                     let width = img.width;
                     let height = img.height;
-
                     if (width > height) {
                         if (width > MAX_WIDTH) {
                             height *= MAX_WIDTH / width;
@@ -470,22 +470,18 @@
                     canvas.width = width;
                     canvas.height = height;
                     ctx.drawImage(img, 0, 0, width, height);
-
                     canvas.toBlob(function(blob) {
                         const formData = new FormData();
                         formData.append('image', blob, file.name); // Use original file name
                         formData.append('scan_type', scanType);
-
                         scannedValuesContainer.innerHTML = `
                             <div class="d-flex align-items-center">
                                 <strong>影像掃描中，請稍候...</strong>
                                 <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
                             </div>`;
-
                         let endpoint = '';
                         let isBp = scanType === 'bp';
                         let isBs = scanType === 'fasting' || scanType === 'postprandial';
-
                         if (isBp) {
                             endpoint = '/imgrec/bp_image';
                         } else if (isBs) {
@@ -495,7 +491,6 @@
                             scannedValuesContainer.innerHTML = `<p class="text-danger">錯誤：未知的掃描類型。</p>`;
                             return;
                         }
-
                         fetch(endpoint, {
                             method: 'POST',
                             body: formData,
@@ -510,12 +505,10 @@
                             console.log("Data from backend:", data);
                             let modalContent = '';
                             let fieldsToFill = {};
-
                             if (isBp) {
                                 fieldsToFill[`${targetIdentifier.replace('_bp', '_systolic')}`] = data.systolic;
                                 fieldsToFill[`${targetIdentifier.replace('_bp', '_diastolic')}`] = data.diastolic;
                                 fieldsToFill[`${targetIdentifier.replace('_bp', '_pulse')}`] = data.pulse;
-                                
                                 modalContent = `
                                     <p>收縮壓: ${data.systolic !== null && data.systolic !== undefined ? data.systolic : '未識別'} mmHg</p>
                                     <p>舒張壓: ${data.diastolic !== null && data.diastolic !== undefined ? data.diastolic : '未識別'} mmHg</p>
@@ -525,11 +518,11 @@
                                 let value;
                                 if (scanType === 'fasting' && data.fasting !== undefined && data.fasting !== null) {
                                     value = data.fasting;
-                                    modalContent = `<p>空腹血糖: ${value} mg/dL</p>`; // (${targetIdentifier})
+                                    modalContent = `<p>空腹血糖: ${value} mg/dL</p>`;
                                     fieldsToFill[targetIdentifier] = value;
                                 } else if (scanType === 'postprandial' && data.postprandial !== undefined && data.postprandial !== null) {
                                     value = data.postprandial;
-                                    modalContent = `<p>餐後血糖: ${value} mg/dL</p>`; // (${targetIdentifier})
+                                    modalContent = `<p>餐後血糖: ${value} mg/dL</p>`;
                                     fieldsToFill[targetIdentifier] = value;
                                 } else if (data.blood_sugar_value !== undefined && data.blood_sugar_value !== null) { 
                                     value = data.blood_sugar_value;
@@ -538,12 +531,10 @@
                                 } else {
                                     modalContent = `<p>未能識別 ${scanType === 'fasting' ? '空腹' : '餐後'}血糖數值 (${targetIdentifier})。</p>`;
                                 }
-                                
                                 if (Object.keys(fieldsToFill).length === 0) {
                                      modalContent = `<p>未能識別血糖數值 (${targetIdentifier})。</p>`;
                                 }
                             }
-                            
                             scannedValuesContainer.innerHTML = modalContent;
                             if (Object.keys(fieldsToFill).some(key => fieldsToFill[key] !== null && fieldsToFill[key] !== undefined)) {
                                 confirmFillBtn.style.display = 'inline-block';
@@ -560,7 +551,6 @@
                             scannedValuesContainer.innerHTML = `<p class="text-danger">圖片掃描失敗: ${error.message}</p>`;
                             confirmFillBtn.style.display = 'none';
                         });
-
                     }, 'image/jpeg', 0.7); // Compress to JPEG with 70% quality
                 }
                 img.onerror = function() {
@@ -577,7 +567,6 @@
             }
             reader.readAsDataURL(file);
         }
-
         function fillFormFields(data) {
             for (const key in data) {
                 if (data.hasOwnProperty(key)) {
@@ -591,7 +580,6 @@
                 }
             }
         }
-
         function loadTodaysHealthData() {
             fetch('/api/get_today_health_data')
                 .then(response => {
@@ -617,7 +605,6 @@
                     if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 無法載入今日已存數據: ${error.message}</p>`;
                 });
         }
-
         function validateFormInputsElderly(inputs) {
             for (let input of inputs) {
                 if (input.value) { // Only validate if there is a value
@@ -626,7 +613,6 @@
                     const value = parseFloat(input.value);
                     if (isNaN(value) || value < min || value > max) {
                         alert(`欄位 ${input.name} 請輸入 ${min} 到 ${max} 之間的有效數值。`);
-                        // input.value = ''; // Optionally clear invalid input, or let user correct
                         input.focus();
                         return false;
                     }
@@ -634,24 +620,21 @@
             }
             return true;
         }
-        
         const summaryStatusDivElderly = document.getElementById('summary-status-elderly');
         const socket = io(); 
-
         socket.on('update', function(data) {
             if (summaryStatusDivElderly) {
                 const statusClass = data.message.includes('❌') ? 'text-danger' : 
                                     data.message.includes('🟡') ? 'text-warning' : 'text-success';
                 summaryStatusDivElderly.innerHTML += `<p class="${statusClass}" style="font-size: 1.25rem;">${data.message}</p>`;
                 summaryStatusDivElderly.scrollTop = summaryStatusDivElderly.scrollHeight;
-
-                // If the update message indicates a successful save, reload the data
                 if (data.event_type === 'summary' && data.message.includes('🟢') && data.message.includes('紀錄儲存成功')) {
                     loadTodaysHealthData(); // Refresh data in the form
+                    showHealthStatus(); // Show status cards after successful save
+                    document.getElementById('health-status-card').style.display = 'block'; // Show health status card
                 }
             }
         });
-
         socket.on('confirm_overwrite', function(data) {
             if (confirm(data.message)) {
                 const formData = new FormData();
@@ -663,6 +646,8 @@
                 }).then(response => response.text())
                   .then(result => {
                       if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += '<p class="text-success" style="font-size: 1.25rem;">🟢 資料已覆蓋</p>';
+                      showHealthStatus(); // Show status cards after overwrite
+                      document.getElementById('health-status-card').style.display = 'block'; // Show health status card
                   })
                   .catch(error => {
                       if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 覆蓋失敗: ${error}</p>`;
@@ -671,19 +656,15 @@
                 if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += '<p class="text-danger" style="font-size: 1.25rem;">❌ 取消覆蓋資料</p>';
             }
         });
-
         const healthDataFormElderly = document.getElementById('health-data-form-elderly');
         if (healthDataFormElderly) {
             healthDataFormElderly.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
                 const allInputs = document.querySelectorAll('#timeOfDayTabContent .health-input');
                 if (!validateFormInputsElderly(allInputs)) return;
-                
                 const formData = new FormData();
                 const recordDateInput = document.getElementById('record-date-elderly');
                 if (recordDateInput) formData.append('date', recordDateInput.value);
-                
                 let hasDataToSave = false;
                 allInputs.forEach(input => {
                     if (input.value) { // Only add to FormData if there's a value
@@ -691,63 +672,100 @@
                         hasDataToSave = true;
                     }
                 });
-
                 if (!hasDataToSave) {
                     alert("請至少輸入一筆健康數據才能儲存。");
                     if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML = `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 請至少輸入一筆健康數據。</p>`;
                     return;
                 }
-
                 fetch('/save_health_data', {
                     method: 'POST',
                     body: formData
                 }).then(response => {
                     if (!response.ok) throw new Error(`伺服器錯誤: ${response.statusText}`);
-                    return response.text(); // Assuming server sends back a simple text confirmation or error
+                    return response.text();
                 }).then(data => {
-                    // Success message is handled by SocketIO 'update' event from server,
-                    // which will now also trigger loadTodaysHealthData().
-                    // No need to clear form fields here, as loadTodaysHealthData will repopulate them.
-                    // allInputs.forEach(input => input.value = ''); 
+                    // Success message handled by SocketIO 'update' event
                 }).catch(error => {
                     if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 儲存今日數據失敗: ${error.message}</p>`;
                 });
             });
         }
-
         function showHealthStatus() {
-            const bpSystolic = parseFloat(document.querySelector('input[name="morning_systolic"]').value) || 0;
-            const bpDiastolic = parseFloat(document.querySelector('input[name="morning_diastolic"]').value) || 0;
-            const bsFasting = parseFloat(document.querySelector('input[name="morning_fasting"]').value) || 0;
-            const bsPostprandial = parseFloat(document.querySelector('input[name="morning_postprandial"]').value) || 0;
-
+            // Aggregate data from all tabs
+            const times = ['morning', 'noon', 'evening'];
+            let bpSystolic = 0, bpDiastolic = 0, bsFasting = 0, bsPostprandial = 0;
+            times.forEach(time => {
+                const sys = parseFloat(document.querySelector(`input[name="${time}_systolic"]`).value) || 0;
+                const dia = parseFloat(document.querySelector(`input[name="${time}_diastolic"]`).value) || 0;
+                const fast = parseFloat(document.querySelector(`input[name="${time}_fasting"]`).value) || 0;
+                const post = parseFloat(document.querySelector(`input[name="${time}_postprandial"]`).value) || 0;
+                // Use the first non-zero value for simplicity
+                if (sys > 0 && bpSystolic === 0) bpSystolic = sys;
+                if (dia > 0 && bpDiastolic === 0) bpDiastolic = dia;
+                if (fast > 0 && bsFasting === 0) bsFasting = fast;
+                if (post > 0 && bsPostprandial === 0) bsPostprandial = post;
+            });
+            console.log('Health Status Inputs:', { bpSystolic, bpDiastolic, bsFasting, bsPostprandial });
             const bpStatusCard = document.getElementById('bp-status-card');
             const bsStatusCard = document.getElementById('bs-status-card');
             const bpStatusText = document.getElementById('bp-status-text');
             const bsStatusText = document.getElementById('bs-status-text');
             const bpNormalRange = document.getElementById('bp-normal-range');
             const bsNormalRange = document.getElementById('bs-normal-range');
-
+            const healthWarnings = document.getElementById('health-warnings');
             let bpStatus = '';
             let bsStatus = '';
-
+            let warnings = [];
             // Blood Pressure Status Logic
-            if (bpSystolic < 120 && bpDiastolic < 80) {
-                bpStatus = '達標';
-                bpStatusCard.className = 'card text-white text-center status-card-green';
+            if (bpSystolic > 0 || bpDiastolic > 0) {
+                if (bpSystolic < 120 && bpDiastolic < 80) {
+                    bpStatus = '達標';
+                    bpStatusCard.className = 'card text-white text-center status-card-green';
+                } else {
+                    bpStatus = '未達標';
+                    bpStatusCard.className = 'card text-white text-center status-card-red';
+                    // Check for hypertension conditions
+                    if (bpSystolic >= 180 || bpDiastolic >= 120) {
+                        warnings.push('⚠️ 可能高血壓危象 (收縮壓 ≥ 180 mmHg 或 舒張壓 ≥ 120 mmHg)');
+                    } else if (bpSystolic >= 140 && bpSystolic <= 179 || bpDiastolic >= 90 && bpDiastolic <= 119) {
+                        warnings.push('⚠️ 可能高血壓第二期 (收縮壓 140-179 mmHg 或 舒張壓 90-119 mmHg)');
+                    } else if (bpSystolic >= 130 && bpSystolic <= 139 || bpDiastolic >= 80 && bpDiastolic <= 89) {
+                        warnings.push('⚠️ 可能高血壓第一期 (收縮壓 130-139 mmHg 或 舒張壓 80-89 mmHg)');
+                    } else if (bpSystolic >= 120 && bpSystolic <= 129 && bpDiastolic < 80) {
+                        warnings.push('⚠️ 可能高血壓前期 (收縮壓 120-129 mmHg 且 舒張壓 < 80 mmHg)');
+                    }
+                }
             } else {
-                bpStatus = '未達標';
-                bpStatusCard.className = 'card text-white text-center status-card-red';
+                bpStatus = '無資料';
+                bpStatusCard.className = 'card text-white text-center';
             }
-
-            // Blood Sugar Status Logic (using fasting as primary, postprandial if fasting is 0)
-            if (bsFasting > 0) {
+            // Blood Sugar Status Logic
+            if (bsFasting > 0 && bsPostprandial > 0) {
+                if (bsFasting < 100 && bsPostprandial < 140) {
+                    bsStatus = '達標';
+                    bsStatusCard.className = 'card text-white text-center status-card-green';
+                } else {
+                    bsStatus = '未達標';
+                    bsStatusCard.className = 'card text-white text-center status-card-red';
+                    // Check for diabetes conditions
+                    if (bsFasting >= 126 || bsPostprandial >= 200) {
+                        warnings.push('⚠️ 可能糖尿病 (空腹血糖 ≥ 126 mg/dL 或 餐後血糖 ≥ 200 mg/dL)');
+                    } else if (bsFasting >= 100 && bsFasting <= 125 || bsPostprandial >= 140 && bsPostprandial <= 199) {
+                        warnings.push('⚠️ 可能糖尿病前期 (空腹血糖 100-125 mg/dL 或 餐後血糖 140-199 mg/dL)');
+                    }
+                }
+            } else if (bsFasting > 0) {
                 if (bsFasting < 100) {
                     bsStatus = '達標';
                     bsStatusCard.className = 'card text-white text-center status-card-green';
                 } else {
                     bsStatus = '未達標';
                     bsStatusCard.className = 'card text-white text-center status-card-red';
+                    if (bsFasting >= 126) {
+                        warnings.push('⚠️ 可能糖尿病 (空腹血糖 ≥ 126 mg/dL)');
+                    } else if (bsFasting >= 100 && bsFasting <= 125) {
+                        warnings.push('⚠️ 可能糖尿病前期 (空腹血糖 100-125 mg/dL)');
+                    }
                 }
             } else if (bsPostprandial > 0) {
                 if (bsPostprandial < 140) {
@@ -756,58 +774,30 @@
                 } else {
                     bsStatus = '未達標';
                     bsStatusCard.className = 'card text-white text-center status-card-red';
+                    if (bsPostprandial >= 200) {
+                        warnings.push('⚠️ 可能糖尿病 (餐後血糖 ≥ 200 mg/dL)');
+                    } else if (bsPostprandial >= 140 && bsPostprandial <= 199) {
+                        warnings.push('⚠️ 可能糖尿病前期 (餐後血糖 140-199 mg/dL)');
+                    }
                 }
             } else {
                 bsStatus = '無資料';
-                bsStatusCard.className = 'card text-white text-center'; // No color
+                bsStatusCard.className = 'card text-white text-center';
             }
-
             bpStatusText.innerText = `血壓狀態: ${bpStatus}`;
             bsStatusText.innerText = `血糖狀態: ${bsStatus}`;
-
             bpNormalRange.innerText = '正常範圍: 收縮壓 < 120 mmHg 且 舒張壓 < 80 mmHg';
-            bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 或 餐後血糖 < 140 mg/dL';
-
+            // Dynamic blood sugar normal range text
+            if (bsFasting > 0 && bsPostprandial > 0 && (bsPostprandial - bsFasting) >= 60) {
+                bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 且 餐後血糖較空腹增加 < 60 mg/dL';
+            } else {
+                bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 且 餐後血糖 < 140 mg/dL';
+            }
             bpStatusCard.style.display = bpSystolic > 0 || bpDiastolic > 0 ? 'block' : 'none';
             bsStatusCard.style.display = bsFasting > 0 || bsPostprandial > 0 ? 'block' : 'none';
-        }
-
-        if (healthDataFormElderly) {
-            healthDataFormElderly.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const allInputs = document.querySelectorAll('#timeOfDayTabContent .health-input');
-                if (!validateFormInputsElderly(allInputs)) return;
-                
-                const formData = new FormData();
-                const recordDateInput = document.getElementById('record-date-elderly');
-                if (recordDateInput) formData.append('date', recordDateInput.value);
-                
-                let hasDataToSave = false;
-                allInputs.forEach(input => {
-                    if (input.value) { // Only add to FormData if there's a value
-                        formData.append(input.name, input.value);
-                        hasDataToSave = true;
-                    }
-                });
-
-                if (!hasDataToSave) {
-                    alert("請至少輸入一筆健康數據才能儲存。");
-                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML = `<p class="text-warning" style="font-size: 1.25rem;">⚠️ 請至少輸入一筆健康數據。</p>`;
-                    return;
-                }
-
-                fetch('/save_health_data', {
-                    method: 'POST',
-                    body: formData
-                }).then(response => {
-                    if (!response.ok) throw new Error(`伺服器錯誤: ${response.statusText}`);
-                    return response.text(); // Assuming server sends back a simple text confirmation or error
-                }).catch(error => {
-                    if(summaryStatusDivElderly) summaryStatusDivElderly.innerHTML += `<p class="text-danger" style="font-size: 1.25rem;">❌ 儲存今日數據失敗: ${error.message}</p>`;
-                });
-                showHealthStatus();
-            });
+            // Update health warnings
+            healthWarnings.innerText = warnings.length > 0 ? warnings.join(' ') : '';
+            console.log('Card Display:', { bpCard: bpStatusCard.style.display, bsCard: bsStatusCard.style.display, warnings });
         }
     </script>
 </body>
