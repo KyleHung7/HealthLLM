@@ -1,7 +1,8 @@
 import os
 import threading
 import pandas as pd
-from flask import Flask, render_template, request, send_file, make_response, redirect, url_for, jsonify
+import requests
+from flask import Flask, render_template, request, send_file, make_response, redirect, url_for, jsonify, Response
 from flask_socketio import SocketIO, join_room
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -19,6 +20,11 @@ from lib import mdToHtml, clear_user_data_folder
 
 # Load environment variables
 load_dotenv()
+
+# Get RAG server URL from environment variables
+RAG_SERVER_URL = os.getenv("RAG_SERVER_URL")
+if not RAG_SERVER_URL:
+    print("Warning: RAG_SERVER_URL not set in environment variables.")
 
 # Allow OAuth over HTTP for development
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -756,6 +762,117 @@ def ask_question_linked():
         app.logger.error(f"Error answering linked question for user {linked_user_id}: {e}")
         socketio.emit('update', {'message': f"❌ 連結帳戶問題回答錯誤: {str(e)}", 'event_type': 'question', 'target': 'question'}, room=current_user.id)
         return jsonify({'success': False, 'message': '問題處理錯誤'}), 500
+
+# RAG Chat page
+@app.route('/rag_chat')
+@login_required
+def rag_chat():
+    response = make_response(render_template('rag_chat.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
+# Handle text questions for RAG
+@app.route('/rag_submit', methods=['POST'])
+@login_required
+def rag_submit():
+    question = request.form.get('question', '').strip()
+    voice_mode = request.form.get('voice_mode') == 'true'
+    print("Asking question: ", question, " Voice mode: ", voice_mode)
+
+    if not question:
+        return jsonify({'error': '請輸入問題'}), 400
+
+    if not RAG_SERVER_URL:
+        return jsonify({'error': 'RAG 伺服器地址未設定'}), 500
+
+    try:
+        # Send question to RAG server chat endpoint
+        chat_response = requests.post(f"{RAG_SERVER_URL}/submit", json={'question': question})
+        chat_response.raise_for_status() # Raise an exception for bad status codes
+        rag_answer = mdToHtml(chat_response.json().get('answer', '無法取得回答'))
+
+        audio_url = None
+        if voice_mode:
+            # Send answer to RAG server text-to-speech endpoint
+            tts_response = requests.post(f"{RAG_SERVER_URL}/record", json={'text': rag_answer})
+            tts_response.raise_for_status()
+            audio_url = tts_response.json().get('audio_url')
+
+        return jsonify({'answer': rag_answer, 'audio': audio_url})
+
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error communicating with RAG server: {e}")
+        return jsonify({'error': f'與 RAG 伺服器通訊錯誤: {e}'}), 500
+    except Exception as e:
+        app.logger.error(f"Error processing RAG submit: {e}")
+        return jsonify({'error': f'處理 RAG 提交錯誤: {e}'}), 500
+
+# Handle voice input for RAG
+@app.route('/rag_record', methods=['POST'])
+@login_required
+def rag_record():
+    audio_file = request.files.get('audio')
+    mode = request.form.get('mode') # 'transcribe' or 'voice'
+
+    if not audio_file:
+        return jsonify({'error': '未收到音訊檔案'}), 400
+
+    if not RAG_SERVER_URL:
+        return jsonify({'error': 'RAG 伺服器地址未設定'}), 500
+
+    try:
+        # Send audio to RAG server speech-to-text endpoint
+        files = {
+            'audio': (audio_file.filename, audio_file.stream, audio_file.mimetype),
+            'mode': (None, mode) # Include mode directly in files
+        }
+        stt_response = requests.post(f"{RAG_SERVER_URL}/record", files=files)
+        stt_response.raise_for_status()
+        # The RAG server's /record endpoint handles the full voice process when mode='voice'
+        rag_response_json = stt_response.json()
+        transcription = rag_response_json.get('transcription', '無法轉錄')
+        rag_answer = mdToHtml(rag_response_json.get('answer', None)) # Answer is only present in voice mode
+        audio_url = rag_response_json.get('audio', None) # Audio URL is only present in voice mode
+
+        return jsonify({'transcription': transcription, 'answer': rag_answer, 'audio': audio_url})
+
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error communicating with RAG server: {e}")
+        return jsonify({'error': f'與 RAG 伺服器通訊錯誤: {e}'}), 500
+    except Exception as e:
+        app.logger.error(f"Error processing RAG record: {e}")
+        return jsonify({'error': f'處理 RAG 錄音錯誤: {e}'}), 500
+
+@app.route('/audio/<filename>')
+@login_required
+def serve_rag_audio(filename):
+    if not RAG_SERVER_URL:
+        app.logger.error('RAG 伺服器地址未設定')
+        # Return a default error audio file
+        return send_file('healthanaly/static/error_audio.mp3', mimetype='audio/mpeg')
+
+    try:
+        rag_audio_url = f"{RAG_SERVER_URL}/audio/{filename}"
+        response = requests.get(rag_audio_url, stream=True)
+        response.raise_for_status()
+
+        # Determine mimetype, default to MP3
+        content_type = response.headers.get('Content-Type', 'audio/mpeg')
+        
+        # Return the audio file directly to the client
+        return Response(
+            response.iter_content(chunk_size=1024),
+            status=response.status_code,
+            mimetype=content_type,
+            headers={'Content-Disposition': f'inline; filename={filename}'}
+        )
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error fetching audio from RAG server: {e}")
+        # Return a default error audio file
+        return send_file('healthanaly/static/error_audio.mp3', mimetype='audio/mpeg')
+
 
 # Start server
 if __name__ == '__main__':

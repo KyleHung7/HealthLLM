@@ -177,6 +177,9 @@
         
         /* Mobile-specific table styling */
         @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
             table {
                 display: block;
                 overflow-x: auto;
@@ -198,6 +201,9 @@
             }
             #date-navigation input[type="date"] {
                 margin-bottom: 0.5rem; /* Add some space if it wraps */
+            }
+            #date-navigation button {
+                padding: 0.2rem 0.5rem; /* Smaller padding for date buttons */
             }
         }
 

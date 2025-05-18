@@ -185,6 +185,9 @@
 
         /* Mobile-specific table styling */
         @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
             table {
                 display: block;
                 overflow-x: auto;
@@ -248,12 +251,12 @@
     </style>
 </head>
 <body>
+    {% include 'partials/navbar.html' %}
+
     <header>
         <h1>🧠 AI 居家照護系統：HealthLLM</h1>
         <p>用科技守護每個家庭的健康 💖</p>
     </header>
-
-    {% include 'partials/navbar.html' %}
     
     <!-- Store authentication status in a hidden input -->
     <input type="hidden" id="auth-status" value="{{ current_user.is_authenticated }}">
