@@ -97,6 +97,11 @@
         .pulse-circle:nth-child(3) {
             animation-delay: 0.8s;
         }
+        #submit-btn {
+            font-size: 1rem;
+            padding: 1rem 1rem;
+            min-width: 120px;
+        }
         @keyframes pulse {
             0%, 100% {
                 transform: scale(1);
@@ -111,6 +116,11 @@
         @media (max-width: 768px) {
             body {
                 padding: 0.5rem;
+            }
+            #submit-btn {
+                font-size: 1rem;
+                padding: 1rem 1rem;
+                min-width: 96px;
             }
         }
     </style>
@@ -166,6 +176,7 @@
         const transcribeBtn = document.getElementById('transcribe-btn');
         const voiceBtn = document.getElementById('voice-btn');
         const loading = document.getElementById('loading');
+        const systemUsername = "🤖";
         let mediaRecorder;
         let audioChunks = [];
         let isRecording = false;
@@ -248,7 +259,7 @@
                 showLoading();
                 console.log(`Recording started, MIME type: ${mimeType}`);
             } catch (e) {
-                addMessage('系統', `錄音失敗：${e.message}`, 'bot-message');
+                addMessage(systemUsername, `錄音失敗：${e.message}`, 'bot-message');
                 hideLoading();
             }
         }
@@ -265,7 +276,7 @@
         async function processRecording(mimeType) {
             console.log(`Processing recording, audio chunks: ${audioChunks.length}`);
             if (audioChunks.length === 0) {
-                addMessage('系統', '錄音失敗：無音訊數據，請確認麥克風正常並已授予權限', 'bot-message');
+                addMessage(systemUsername, '錄音失敗：無音訊數據，請確認麥克風正常並已授予權限', 'bot-message');
                 hideLoading();
                 return;
             }
@@ -284,13 +295,13 @@
                 const result = await response.json();
 
                 if (result.error) {
-                    addMessage('系統', result.error, 'bot-message');
+                    addMessage(systemUsername, result.error, 'bot-message');
                 } else {
                     if (currentMode === 'transcribe') {
                         questionInput.value = result.transcription; // Only fill input box
                     } else if (currentMode === 'voice') {
                         addMessage('你', result.transcription, 'user-message');
-                        addMessage('系統', result.answer, 'bot-message');
+                        addMessage(systemUsername, result.answer, 'bot-message');
                         if (result.audio) { // Always play audio for voice mode
                             audioPlayer.src = result.audio;
                             audioPlayer.play();
@@ -298,7 +309,7 @@
                     }
                 }
             } catch (e) {
-                addMessage('系統', `處理失敗：${e.message}`, 'bot-message');
+                addMessage(systemUsername, `處理失敗：${e.message}`, 'bot-message');
             }
             hideLoading();
         }
@@ -324,7 +335,7 @@
                 // Ensure minimum recording time
                 const recordingTime = Date.now() - recordingStartTime;
                 if (recordingTime < MIN_RECORDING_TIME) {
-                    addMessage('系統', `錄音時間過短，請至少錄音 ${MIN_RECORDING_TIME / 1000} 秒`, 'bot-message');
+                    addMessage(systemUsername, `錄音時間過短，請至少錄音 ${MIN_RECORDING_TIME / 1000} 秒`, 'bot-message');
                     stopRecording();
                     hideLoading();
                     return;
@@ -336,7 +347,7 @@
             } else {
                 const question = questionInput.value.trim();
                 if (!question) {
-                    addMessage('系統', '請輸入或錄音問題。', 'bot-message');
+                    addMessage(systemUsername, '請輸入或錄音問題。', 'bot-message');
                     return;
                 }
 
@@ -354,16 +365,16 @@
                     const result = await response.json();
 
                     if (result.error) {
-                        addMessage('系統', result.error, 'bot-message');
+                        addMessage(systemUsername, result.error, 'bot-message');
                     } else {
-                        addMessage('系統', result.answer, 'bot-message');
+                        addMessage(systemUsername, result.answer, 'bot-message');
                         if (result.audio && voiceMode.checked) {
                             audioPlayer.src = result.audio;
                             audioPlayer.play();
                         }
                     }
                 } catch (e) {
-                    addMessage('系統', `處理失敗：${e.message}`, 'bot-message');
+                    addMessage(systemUsername, `處理失敗：${e.message}`, 'bot-message');
                 }
                 questionInput.value = '';
                 hideLoading();
