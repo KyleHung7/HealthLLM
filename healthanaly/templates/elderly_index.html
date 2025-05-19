@@ -360,35 +360,7 @@
                 tab.show();
             }
         }
-        function updateHealthRisk() {
-            const systolic = parseFloat(document.querySelector('input[name="morning_systolic"]').value) ||
-                             parseFloat(document.querySelector('input[name="noon_systolic"]').value) ||
-                             parseFloat(document.querySelector('input[name="evening_systolic"]').value) || 0;
-            const diastolic = parseFloat(document.querySelector('input[name="morning_diastolic"]').value) ||
-                              parseFloat(document.querySelector('input[name="noon_diastolic"]').value) ||
-                              parseFloat(document.querySelector('input[name="evening_diastolic"]').value) || 0;
-            const fasting = parseFloat(document.querySelector('input[name="morning_fasting"]').value) ||
-                             parseFloat(document.querySelector('input[name="noon_fasting"]').value) ||
-                             parseFloat(document.querySelector('input[name="evening_fasting"]').value) || 0;
-            const postprandial = parseFloat(document.querySelector('input[name="morning_postprandial"]').value) ||
-                                  parseFloat(document.querySelector('input[name="noon_postprandial"]').value) ||
-                                  parseFloat(document.querySelector('input[name="evening_postprandial"]').value) || 0;
-            let riskText = "";
-            if (systolic >= 180 || diastolic >= 120) {
-                riskText = "可能高血壓危象";
-            } else if (systolic >= 140 && systolic <= 179 || diastolic >= 90 && diastolic <= 119) {
-                riskText = "可能高血壓第二期";
-            } else if (systolic >= 130 && systolic <= 139 || diastolic >= 80 && diastolic <= 89) {
-                riskText = "可能高血壓第一期";
-            } else if (systolic >= 120 && systolic <= 129 && diastolic < 80) {
-                riskText = "可能高血壓前期";
-            } else if (fasting >= 126 || postprandial >= 200) {
-                riskText = "可能糖尿病";
-            } else if (fasting >= 100 && fasting <= 125 || postprandial >= 140 && postprandial <= 199) {
-                riskText = "可能糖尿病前期";
-            }
-            document.getElementById('health-risk-text').innerText = riskText;
-        }
+        
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
             const recordDateInput = document.getElementById('record-date-elderly');
@@ -398,7 +370,13 @@
             // Initialize Bootstrap tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            document.querySelectorAll('#timeOfDayTab button[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                showHealthStatus();
+                });
             });
             // Camera Scan Button Listeners
             const cameraScanButtons = document.querySelectorAll('.camera-scan-btn');
@@ -426,8 +404,7 @@
                 }
                 this.value = null; // Reset file input
             });
-            // Initialize health risk updates
-            updateHealthRisk();
+            
             const healthInputs = document.querySelectorAll('.health-input');
             healthInputs.forEach(input => {
                 input.addEventListener('input', updateHealthRisk);
@@ -691,21 +668,16 @@
             });
         }
         function showHealthStatus() {
-            // Aggregate data from all tabs
-            const times = ['morning', 'noon', 'evening'];
-            let bpSystolic = 0, bpDiastolic = 0, bsFasting = 0, bsPostprandial = 0;
-            times.forEach(time => {
-                const sys = parseFloat(document.querySelector(`input[name="${time}_systolic"]`).value) || 0;
-                const dia = parseFloat(document.querySelector(`input[name="${time}_diastolic"]`).value) || 0;
-                const fast = parseFloat(document.querySelector(`input[name="${time}_fasting"]`).value) || 0;
-                const post = parseFloat(document.querySelector(`input[name="${time}_postprandial"]`).value) || 0;
-                // Use the first non-zero value for simplicity
-                if (sys > 0 && bpSystolic === 0) bpSystolic = sys;
-                if (dia > 0 && bpDiastolic === 0) bpDiastolic = dia;
-                if (fast > 0 && bsFasting === 0) bsFasting = fast;
-                if (post > 0 && bsPostprandial === 0) bsPostprandial = post;
-            });
-            console.log('Health Status Inputs:', { bpSystolic, bpDiastolic, bsFasting, bsPostprandial });
+            const activeTabPane = document.querySelector('.tab-pane.active');
+            if (!activeTabPane) return;
+
+            const timeOfDay = activeTabPane.id.split('-')[0]; // e.g. "morning", "noon", "evening"
+
+            const bpSystolic = parseFloat(document.querySelector(`input[name="${timeOfDay}_systolic"]`).value) || 0;
+            const bpDiastolic = parseFloat(document.querySelector(`input[name="${timeOfDay}_diastolic"]`).value) || 0;
+            const bsFasting = parseFloat(document.querySelector(`input[name="${timeOfDay}_fasting"]`).value) || 0;
+            const bsPostprandial = parseFloat(document.querySelector(`input[name="${timeOfDay}_postprandial"]`).value) || 0;
+
             const bpStatusCard = document.getElementById('bp-status-card');
             const bsStatusCard = document.getElementById('bs-status-card');
             const bpStatusText = document.getElementById('bp-status-text');
@@ -713,10 +685,13 @@
             const bpNormalRange = document.getElementById('bp-normal-range');
             const bsNormalRange = document.getElementById('bs-normal-range');
             const healthWarnings = document.getElementById('health-warnings');
+            const healthStatusCard = document.getElementById('health-status-card');
+
             let bpStatus = '';
             let bsStatus = '';
             let warnings = [];
-            // Blood Pressure Status Logic
+
+            // 血壓狀態邏輯
             if (bpSystolic > 0 || bpDiastolic > 0) {
                 if (bpSystolic < 120 && bpDiastolic < 80) {
                     bpStatus = '達標';
@@ -724,14 +699,13 @@
                 } else {
                     bpStatus = '未達標';
                     bpStatusCard.className = 'card text-white text-center status-card-red';
-                    // Check for hypertension conditions
                     if (bpSystolic >= 180 || bpDiastolic >= 120) {
                         warnings.push('⚠️ 可能高血壓危象 (收縮壓 ≥ 180 mmHg 或 舒張壓 ≥ 120 mmHg)');
-                    } else if (bpSystolic >= 140 && bpSystolic <= 179 || bpDiastolic >= 90 && bpDiastolic <= 119) {
+                    } else if ((bpSystolic >= 140 && bpSystolic <= 179) || (bpDiastolic >= 90 && bpDiastolic <= 119)) {
                         warnings.push('⚠️ 可能高血壓第二期 (收縮壓 140-179 mmHg 或 舒張壓 90-119 mmHg)');
-                    } else if (bpSystolic >= 130 && bpSystolic <= 139 || bpDiastolic >= 80 && bpDiastolic <= 89) {
+                    } else if ((bpSystolic >= 130 && bpSystolic <= 139) || (bpDiastolic >= 80 && bpDiastolic <= 89)) {
                         warnings.push('⚠️ 可能高血壓第一期 (收縮壓 130-139 mmHg 或 舒張壓 80-89 mmHg)');
-                    } else if (bpSystolic >= 120 && bpSystolic <= 129 && bpDiastolic < 80) {
+                    } else if ((bpSystolic >= 120 && bpSystolic <= 129) && bpDiastolic < 80) {
                         warnings.push('⚠️ 可能高血壓前期 (收縮壓 120-129 mmHg 且 舒張壓 < 80 mmHg)');
                     }
                 }
@@ -739,65 +713,36 @@
                 bpStatus = '無資料';
                 bpStatusCard.className = 'card text-white text-center';
             }
-            // Blood Sugar Status Logic
-            if (bsFasting > 0 && bsPostprandial > 0) {
+
+            // 血糖狀態邏輯
+            if (bsFasting > 0 || bsPostprandial > 0) {
                 if (bsFasting < 100 && bsPostprandial < 140) {
                     bsStatus = '達標';
                     bsStatusCard.className = 'card text-white text-center status-card-green';
                 } else {
                     bsStatus = '未達標';
                     bsStatusCard.className = 'card text-white text-center status-card-red';
-                    // Check for diabetes conditions
                     if (bsFasting >= 126 || bsPostprandial >= 200) {
                         warnings.push('⚠️ 可能糖尿病 (空腹血糖 ≥ 126 mg/dL 或 餐後血糖 ≥ 200 mg/dL)');
-                    } else if (bsFasting >= 100 && bsFasting <= 125 || bsPostprandial >= 140 && bsPostprandial <= 199) {
+                    } else if ((bsFasting >= 100 && bsFasting <= 125) || (bsPostprandial >= 140 && bsPostprandial <= 199)) {
                         warnings.push('⚠️ 可能糖尿病前期 (空腹血糖 100-125 mg/dL 或 餐後血糖 140-199 mg/dL)');
-                    }
-                }
-            } else if (bsFasting > 0) {
-                if (bsFasting < 100) {
-                    bsStatus = '達標';
-                    bsStatusCard.className = 'card text-white text-center status-card-green';
-                } else {
-                    bsStatus = '未達標';
-                    bsStatusCard.className = 'card text-white text-center status-card-red';
-                    if (bsFasting >= 126) {
-                        warnings.push('⚠️ 可能糖尿病 (空腹血糖 ≥ 126 mg/dL)');
-                    } else if (bsFasting >= 100 && bsFasting <= 125) {
-                        warnings.push('⚠️ 可能糖尿病前期 (空腹血糖 100-125 mg/dL)');
-                    }
-                }
-            } else if (bsPostprandial > 0) {
-                if (bsPostprandial < 140) {
-                    bsStatus = '達標';
-                    bsStatusCard.className = 'card text-white text-center status-card-green';
-                } else {
-                    bsStatus = '未達標';
-                    bsStatusCard.className = 'card text-white text-center status-card-red';
-                    if (bsPostprandial >= 200) {
-                        warnings.push('⚠️ 可能糖尿病 (餐後血糖 ≥ 200 mg/dL)');
-                    } else if (bsPostprandial >= 140 && bsPostprandial <= 199) {
-                        warnings.push('⚠️ 可能糖尿病前期 (餐後血糖 140-199 mg/dL)');
                     }
                 }
             } else {
                 bsStatus = '無資料';
                 bsStatusCard.className = 'card text-white text-center';
             }
+
+            // 顯示狀態卡內容
             bpStatusText.innerText = `血壓狀態: ${bpStatus}`;
             bsStatusText.innerText = `血糖狀態: ${bsStatus}`;
             bpNormalRange.innerText = '正常範圍: 收縮壓 < 120 mmHg 且 舒張壓 < 80 mmHg';
-            // Dynamic blood sugar normal range text
-            if (bsFasting > 0 && bsPostprandial > 0 && (bsPostprandial - bsFasting) >= 60) {
-                bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 且 餐後血糖較空腹增加 < 60 mg/dL';
-            } else {
-                bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 且 餐後血糖 < 140 mg/dL';
-            }
-            bpStatusCard.style.display = bpSystolic > 0 || bpDiastolic > 0 ? 'block' : 'none';
-            bsStatusCard.style.display = bsFasting > 0 || bsPostprandial > 0 ? 'block' : 'none';
-            // Update health warnings
-            healthWarnings.innerText = warnings.length > 0 ? warnings.join(' ') : '';
-            console.log('Card Display:', { bpCard: bpStatusCard.style.display, bsCard: bsStatusCard.style.display, warnings });
+            bsNormalRange.innerText = '正常範圍: 空腹血糖 < 100 mg/dL 且 餐後血糖 < 140 mg/dL';
+
+            bpStatusCard.style.display = (bpSystolic > 0 || bpDiastolic > 0) ? 'block' : 'none';
+            bsStatusCard.style.display = (bsFasting > 0 || bsPostprandial > 0) ? 'block' : 'none';
+            healthWarnings.innerText = warnings.join(' ');
+            healthStatusCard.style.display = 'block';
         }
     </script>
 </body>
