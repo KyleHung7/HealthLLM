@@ -11,3 +11,4 @@ markdown==3.8
 Flask-Login==0.6.3
 Authlib==1.5.2
 nh3==0.2.21
+scikit-learn==1.6.1
