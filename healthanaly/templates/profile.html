@@ -7,6 +7,7 @@
 
     <!-- 字體與樣式 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/navbar.css') }}" rel="stylesheet">
     <style>
         * {
@@ -173,7 +174,7 @@
     {% include 'partials/navbar.html' %}
 
     {% if current_user.is_authenticated %}
-    <div class="section">
+    <div class="section" data-aos="fade-up">
         <h2>👤 使用者個人資料</h2>
         <div class="profile-info">
             <p><strong>姓名：</strong> {{ current_user.name }}</p>
@@ -215,7 +216,9 @@
     </div>
     {% endif %}
 
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script>
+        AOS.init({ duration: 1000, once: true });
         const aiEnabledCheckbox = document.getElementById('ai_enabled');
 
         aiEnabledCheckbox.addEventListener('change', function() {

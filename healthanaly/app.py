@@ -120,7 +120,8 @@ def general_dashboard():
 
     if account_role == 'general':
         # Only general users can access this dashboard.
-        response = make_response(render_template('general_user_dashboard.html'))
+        # response = make_response(render_template('general_user_dashboard.html'))
+        response = make_response(render_template('index_mixed.html'))
         response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '-1'
@@ -148,7 +149,7 @@ def get_linked_accounts_api():
 def get_linked_health_data_generic(linked_user_id, data_type_csv_name, target_date_str):
     # Security check: Ensure current_user is linked to linked_user_id
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'error': 'Unauthorized access to linked account data.'}), 403
 
     if not target_date_str:
@@ -220,14 +221,13 @@ def get_linked_sugar_data_api():
     return get_linked_health_data_generic(linked_user_id, 'blood_sugar.csv', target_date)
 
 # API endpoint to update linked account's health data
-def update_linked_health_data_generic(linked_user_id, records_data, data_type, csv_filename):
+def update_linked_health_data_generic(linked_user_id, records_data, data_type):
     # Security check
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'success': False, 'message': '未授權更新此帳戶的資料。'}), 403
 
     linked_user_folder = get_user_upload_folder(linked_user_id)
-    csv_path = os.path.join(linked_user_folder, csv_filename)
 
     validated_records = []
     for record_dict in records_data:
@@ -242,62 +242,13 @@ def update_linked_health_data_generic(linked_user_id, records_data, data_type, c
         if validation_error:
             return jsonify({'success': False, 'message': f"資料驗證失敗 (日期 {record_dict['date']}): {validation_error}"}), 400
         
-        # Prepare record for CSV: use None for empty values which will become empty strings in CSV
-        # Or keep '無' if that's the desired representation for truly absent data.
-        # The frontend sends null for empty inputs, which are converted to None by request.get_json().
-        # For CSV, pandas will write None as empty strings.
-        csv_ready_record = {k: (v if v is not None else '') for k, v in record_dict.items()}
-        validated_records.append(csv_ready_record)
+        validated_records.append(record_dict)
 
     try:
-        if not validated_records: # If all rows were empty and thus skipped by frontend logic
-             # Create an empty DataFrame with correct columns to effectively clear the CSV
-            if data_type == 'blood_pressure':
-                columns = ['Date', 'Morning_Systolic', 'Morning_Diastolic', 'Morning_Pulse', 
-                           'Noon_Systolic', 'Noon_Diastolic', 'Noon_Pulse',
-                           'Evening_Systolic', 'Evening_Diastolic', 'Evening_Pulse']
-            else: # blood_sugar
-                columns = ['Date', 'Morning_Fasting', 'Morning_Postprandial', 
-                           'Noon_Fasting', 'Noon_Postprandial',
-                           'Evening_Fasting', 'Evening_Postprandial']
-            df = pd.DataFrame(columns=columns)
-        else:
-            df = pd.DataFrame(validated_records)
-             # Ensure correct column order and presence, matching save_health_data_background
-            if data_type == 'blood_pressure':
-                # Map frontend names to CSV column names
-                column_map = {
-                    'date': 'Date', 'morning_systolic': 'Morning_Systolic', 'morning_diastolic': 'Morning_Diastolic', 'morning_pulse': 'Morning_Pulse',
-                    'noon_systolic': 'Noon_Systolic', 'noon_diastolic': 'Noon_Diastolic', 'noon_pulse': 'Noon_Pulse',
-                    'evening_systolic': 'Evening_Systolic', 'evening_diastolic': 'Evening_Diastolic', 'evening_pulse': 'Evening_Pulse'
-                }
-                df.rename(columns=column_map, inplace=True)
-                # Ensure all columns are present
-                expected_bp_cols = ['Date', 'Morning_Systolic', 'Morning_Diastolic', 'Morning_Pulse', 'Noon_Systolic', 'Noon_Diastolic', 'Noon_Pulse', 'Evening_Systolic', 'Evening_Diastolic', 'Evening_Pulse']
-                for col in expected_bp_cols:
-                    if col not in df.columns:
-                        df[col] = ''
-                df = df[expected_bp_cols] # Order columns
+        # Use save_health_data_background for each record with overwrite=True
+        for record in validated_records:
+            threading.Thread(target=save_health_data_background, args=(record, data_type, linked_user_folder, linked_user_id, True)).start()
 
-            elif data_type == 'blood_sugar':
-                column_map = {
-                    'date': 'Date', 'morning_fasting': 'Morning_Fasting', 'morning_postprandial': 'Morning_Postprandial',
-                    'noon_fasting': 'Noon_Fasting', 'noon_postprandial': 'Noon_Postprandial',
-                    'evening_fasting': 'Evening_Fasting', 'evening_postprandial': 'Evening_Postprandial'
-                }
-                df.rename(columns=column_map, inplace=True)
-                expected_sugar_cols = ['Date', 'Morning_Fasting', 'Morning_Postprandial', 'Noon_Fasting', 'Noon_Postprandial', 'Evening_Fasting', 'Evening_Postprandial']
-                for col in expected_sugar_cols:
-                    if col not in df.columns:
-                        df[col] = ''
-                df = df[expected_sugar_cols]
-        
-        # Enforce one record per day by taking the last entry if duplicates for a date exist
-        if not df.empty:
-            df = df.groupby('Date', as_index=False).last()
-            
-        df.sort_values(by='Date', inplace=True)
-        df.to_csv(csv_path, index=False, encoding='utf-8-sig')
         # Emit update to the current user who performed the action
         socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")} 資料已成功更新。', 'event_type': 'summary', 'target': f'linked_{data_type}'}, room=current_user.id)
         return jsonify({'success': True, 'message': f'{data_type.replace("_", " ")} 資料已成功更新。'})
@@ -314,7 +265,7 @@ def update_linked_bp_data_api():
     records = data.get('records')
     if not linked_user_id or records is None: # records can be an empty list
         return jsonify({'success': False, 'message': '缺少 user_id 或 records 資料。'}), 400
-    return update_linked_health_data_generic(linked_user_id, records, 'blood_pressure', 'blood_pressure.csv')
+    return update_linked_health_data_generic(linked_user_id, records, 'blood_pressure')
 
 @app.route('/update_linked_sugar_data', methods=['POST'])
 @login_required
@@ -324,7 +275,7 @@ def update_linked_sugar_data_api():
     records = data.get('records')
     if not linked_user_id or records is None:
         return jsonify({'success': False, 'message': '缺少 user_id 或 records 資料。'}), 400
-    return update_linked_health_data_generic(linked_user_id, records, 'blood_sugar', 'blood_sugar.csv')
+    return update_linked_health_data_generic(linked_user_id, records, 'blood_sugar')
 
 # Validate input values
 def validate_health_data(data, data_type):
@@ -651,7 +602,7 @@ def upload_trend_linked():
 
     # Security check: Ensure current_user is linked to linked_user_id
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'success': False, 'message': '未授權分析此帳戶的資料。'}), 403
 
     filename = secure_filename(file.filename)
@@ -747,7 +698,7 @@ def ask_question_linked():
 
     # Security check: Ensure current_user is linked to linked_user_id
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'success': False, 'message': '未授權查詢此帳戶的問題。'}), 403
     
     # For now, answer_care_question is generic. If it needs linked_user_id context,
