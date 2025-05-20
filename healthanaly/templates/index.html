@@ -358,56 +358,117 @@
         </div>
     </div>
     {% endif %}
-    <script>
-    {% if current_user.is_authenticated %}
-    const socket = io();
-    document.addEventListener('DOMContentLoaded', function() {
-        const today = new Date().toISOString().split('T')[0];
-        const bpDateElem = document.getElementById('bp-date');
-        const sugarDateElem = document.getElementById('sugar-date');
-        if (bpDateElem) bpDateElem.value = today;
-        if (sugarDateElem) sugarDateElem.value = today;
-    });
-    let activeInput = null;
-    const numberPad = document.getElementById('number-pad');
-    const isMobile = window.innerWidth <= 768;
-    document.querySelectorAll('.bp-input, .sugar-input').forEach(input => {
-        input.addEventListener('click', function(e) {
-            if (isMobile) {
-                this.focus();
-                return;
-            }
-            activeInput = this;
-            const rect = this.getBoundingClientRect();
-            if (numberPad) {
-                numberPad.style.display = 'grid';
-                numberPad.style.left = `${rect.left + window.scrollX}px`;
-                numberPad.style.top = `${rect.bottom + window.scrollY + 5}px`;
-            } else {
-                console.error("Number pad element not found!");
-            }
+        <script>
+        {% if current_user.is_authenticated %}
+        const socket = io();
+
+        // Set current date for both tables
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const bpDateElem = document.getElementById('bp-date');
+            const sugarDateElem = document.getElementById('sugar-date');
+            if (bpDateElem) bpDateElem.value = today;
+            if (sugarDateElem) sugarDateElem.value = today;
         });
-    });
-    if (numberPad && !isMobile) {
-        const numberButtons = numberPad.querySelectorAll('.number-button');
-        numberButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const buttonValue = this.textContent.trim();
-                if (activeInput) {
-                    if (!isNaN(parseInt(buttonValue)) && buttonValue.length === 1) {
-                        appendNumber(buttonValue);
-                    } else if (buttonValue === 'C') {
-                        clearNumber();
-                    } else if (buttonValue === 'OK') {
-                        closeNumberPad();
+
+        // Number pad functionality
+        let activeInput = null;
+        const numberPad = document.getElementById('number-pad');
+        const isMobile = window.innerWidth <= 768;
+        const SCREEN_EDGE_PADDING = 10; // Pixels of padding from the screen edge
+
+        document.querySelectorAll('.bp-input, .sugar-input').forEach(input => {
+            input.addEventListener('click', function(e) {
+                if (isMobile) {
+                    // On mobile, trigger native numeric keyboard
+                    this.focus();
+                    return;
+                }
+
+                // On desktop, show custom number pad
+                activeInput = this;
+                const rect = this.getBoundingClientRect(); // Gets position relative to viewport
+                
+                if (numberPad) {
+                    // First, make the number pad display as 'grid' (if not already)
+                    // so we can get its actual offsetWidth.
+                    numberPad.style.display = 'grid'; 
+
+                    const padWidth = numberPad.offsetWidth;
+                    const viewportWidth = window.innerWidth;
+
+                    let newLeft = rect.left; // Initial desired left position (align with input's left)
+
+                    // Check if the number pad would go off-screen to the right
+                    if (newLeft + padWidth > viewportWidth - SCREEN_EDGE_PADDING) {
+                        newLeft = viewportWidth - padWidth - SCREEN_EDGE_PADDING;
                     }
+
+                    // Also ensure the number pad doesn't go off-screen to the left
+                    if (newLeft < SCREEN_EDGE_PADDING) {
+                        newLeft = SCREEN_EDGE_PADDING;
+                    }
+                    
+                    numberPad.style.left = `${newLeft}px`;
+                    numberPad.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                } else {
+                    console.error("Number pad element not found! Make sure it has id='number-pad'.");
                 }
             });
         });
-    }
-    document.addEventListener('click', function(e) {
-        if (!isMobile && activeInput && numberPad && !numberPad.contains(e.target) &&
-            !e.target.classList.contains('bp-input') && !e.target.classList.contains('sugar-input')) {
+
+        // Add event listeners to number pad buttons
+        if (numberPad && !isMobile) {
+            const numberButtons = numberPad.querySelectorAll('.number-button');
+            numberButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const buttonValue = this.textContent.trim();
+
+                    if (activeInput) {
+                        if (!isNaN(parseInt(buttonValue)) && buttonValue.length === 1) {
+                            appendNumber(buttonValue);
+                        } else if (buttonValue === 'C') {
+                            clearNumber();
+                        } else if (buttonValue === 'OK') {
+                            closeNumberPad();
+                        }
+                    }
+                });
+            });
+        }
+
+        // Close number pad when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!isMobile && activeInput && numberPad && !numberPad.contains(e.target) && 
+                !e.target.classList.contains('bp-input') && !e.target.classList.contains('sugar-input')) {
+                
+                if (activeInput) {
+                    const min = parseFloat(activeInput.min);
+                    const max = parseFloat(activeInput.max);
+                    const value = parseFloat(activeInput.value);
+                    if (activeInput.value && (isNaN(value) || value < min || value > max)) {
+                        alert(`請輸入 ${min} 到 ${max} 之間的數值`);
+                        activeInput.value = '';
+                    }
+                }
+                numberPad.style.display = 'none';
+                activeInput = null;
+            }
+        });
+
+        function appendNumber(num) {
+            if (activeInput) {
+                activeInput.value += num;
+            }
+        }
+
+        function clearNumber() {
+            if (activeInput) {
+                activeInput.value = '';
+            }
+        }
+
+        function closeNumberPad() {
             if (activeInput) {
                 const min = parseFloat(activeInput.min);
                 const max = parseFloat(activeInput.max);
@@ -422,199 +483,196 @@
             }
             activeInput = null;
         }
-    });
-    function appendNumber(num) {
-        if (activeInput) {
-            activeInput.value += num;
-        }
-    }
-    function clearNumber() {
-        if (activeInput) {
-            activeInput.value = '';
-        }
-    }
-    function closeNumberPad() {
-        if (activeInput) {
-            const min = parseFloat(activeInput.min);
-            const max = parseFloat(activeInput.max);
-            const value = parseFloat(activeInput.value);
-            if (activeInput.value && (isNaN(value) || value < min || value > max)) {
-                alert(`請輸入 ${min} 到 ${max} 之間的數值`);
-                activeInput.value = '';
-            }
-        }
-        if (numberPad) {
-            numberPad.style.display = 'none';
-        }
-        activeInput = null;
-    }
-    function validateFormInputs(inputs) {
-        for (let input of inputs) {
-            const min = parseFloat(input.min);
-            const max = parseFloat(input.max);
-            const value = parseFloat(input.value);
-            if (input.value && (isNaN(value) || value < min || value > max)) {
-                alert(`請輸入 ${input.name} 的有效數值（${min} 到 ${max}）`);
-                input.value = '';
-                return false;
-            }
-        }
-        return true;
-    }
-    socket.on('update', function(data) {
-        const statusDivId = data.event_type === 'summary' ? 'summary-status' :
-                            data.event_type === 'trend' ? 'trend-status' :
-                            'question-status';
-        const statusDiv = document.getElementById(statusDivId);
-        if (statusDiv) {
-            const statusClass = data.message.includes('❌') ? 'status-error' : 'status-success';
-            statusDiv.innerHTML += `<p class="${statusClass}">${data.message}</p>`;
-            statusDiv.scrollTop = statusDiv.scrollHeight;
-        }
-    });
-    socket.on('confirm_overwrite', function(data) {
-        if (confirm(data.message)) {
-            const formData = new FormData();
-            formData.append('data', JSON.stringify(data.data));
-            formData.append('data_type', data.data_type);
-            fetch('/overwrite_health_data', {
-                method: 'POST',
-                body: formData
-            }).then(response => response.text())
-            .then(result => {
-                const summaryStatus = document.getElementById('summary-status');
-                if (summaryStatus) summaryStatus.innerHTML += '<p class="status-success">🟢 資料已覆蓋</p>';
-            })
-            .catch(error => {
-                const summaryStatus = document.getElementById('summary-status');
-                if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 覆蓋失敗: ${error}</p>`;
-            });
-        } else {
-            const summaryStatus = document.getElementById('summary-status');
-            if (summaryStatus) summaryStatus.innerHTML += '<p class="status-error">❌ 取消覆蓋資料</p>';
-        }
-    });
-    socket.on('trend_result', function(data) {
-        if (data.event_type === 'trend') {
-            const trendOutput = document.getElementById('trend-output');
-            const trendDownload = document.getElementById('trend-download');
-            if (trendOutput) trendOutput.innerHTML = data.trend_output.replace(/\n/g, '<br>');
-            if (trendDownload) {
-                if (data.trend_url) {
-                    trendDownload.innerHTML = `<a href="${data.trend_url}" class="download-btn">📊 下載趨勢圖</a>`;
-                } else {
-                    trendDownload.innerHTML = '';
+
+        // Validate all inputs in a form
+        function validateFormInputs(inputs) {
+            for (let input of inputs) {
+                const min = parseFloat(input.min);
+                const max = parseFloat(input.max);
+                const value = parseFloat(input.value);
+                if (input.value && (isNaN(value) || value < min || value > max)) {
+                    alert(`請輸入 ${input.name} 的有效數值（${min} 到 ${max}）`);
+                    input.value = '';
+                    return false;
                 }
             }
+            return true;
         }
-    });
-    socket.on('question_result', function(data) {
-        if (data.event_type === 'question') {
-            const questionOutput = document.getElementById('question-output');
-            if (questionOutput) questionOutput.innerHTML = data.answer.replace(/\n/g, '<br>');
-        }
-    });
-    const bpForm = document.getElementById('bp-summary-form');
-    if (bpForm) {
-        bpForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const inputs = document.querySelectorAll('#bp-table input.bp-input');
-            if (!validateFormInputs(inputs)) return;
-            const formData = new FormData();
-            const bpDateInput = document.getElementById('bp-date');
-            if (bpDateInput) formData.append('date', bpDateInput.value);
-            inputs.forEach(input => {
-                formData.append(input.name, input.value || '無');
-            });
-            fetch('/save_health_data', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (!response.ok) throw new Error(response.statusText);
-                return response.text();
-            }).then(data => {
-                console.log("BP data saved:", data);
-            }).catch(error => {
-                const summaryStatus = document.getElementById('summary-status');
-                if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 儲存血壓紀錄失敗: ${error}</p>`;
-            });
+
+        // Handle update messages
+        socket.on('update', function(data) {
+            const statusDivId = data.event_type === 'summary' ? 'summary-status' :
+                            data.event_type === 'trend' ? 'trend-status' :
+                            'question-status';
+            const statusDiv = document.getElementById(statusDivId);
+            if (statusDiv) {
+                const statusClass = data.message.includes('❌') ? 'status-error' : 'status-success';
+                statusDiv.innerHTML += `<p class="${statusClass}">${data.message}</p>`;
+                statusDiv.scrollTop = statusDiv.scrollHeight;
+            }
         });
-    }
-    const sugarForm = document.getElementById('sugar-summary-form');
-    if (sugarForm) {
-        sugarForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const inputs = document.querySelectorAll('#sugar-table input.sugar-input');
-            if (!validateFormInputs(inputs)) return;
-            const formData = new FormData();
-            const sugarDateInput = document.getElementById('sugar-date');
-            if (sugarDateInput) formData.append('date', sugarDateInput.value);
-            inputs.forEach(input => {
-                formData.append(input.name, input.value || '無');
-            });
-            fetch('/save_health_data', {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (!response.ok) throw new Error(response.statusText);
-                return response.text();
-            }).then(data => {
-                console.log("Sugar data saved:", data);
-            }).catch(error => {
-                const summaryStatus = document.getElementById('summary-status');
-                if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 儲存血糖紀錄失敗: ${error}</p>`;
-            });
-        });
-    }
-    const trendForm = document.getElementById('trend-form');
-    if (trendForm) {
-        trendForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            const trendFileInput = document.getElementById('trend-file');
-            const timePeriodInput = document.getElementById('time-period');
-            if (trendFileInput && trendFileInput.files[0]) {
-                formData.append('file', trendFileInput.files[0]);
-                if (timePeriodInput) formData.append('time_period', timePeriodInput.value);
-                fetch('/upload_trend', {
+
+        // Handle overwrite confirmation
+        socket.on('confirm_overwrite', function(data) {
+            if (confirm(data.message)) {
+                const formData = new FormData();
+                formData.append('data', JSON.stringify(data.data));
+                formData.append('data_type', data.data_type);
+                fetch('/overwrite_health_data', {
                     method: 'POST',
                     body: formData
                 }).then(response => response.text())
-                .then(data => console.log('Trend upload started'))
-                .catch(error => {
+                  .then(result => {
+                      const summaryStatus = document.getElementById('summary-status');
+                      if (summaryStatus) summaryStatus.innerHTML += '<p class="status-success">🟢 資料已覆蓋</p>';
+                  })
+                  .catch(error => {
+                      const summaryStatus = document.getElementById('summary-status');
+                      if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 覆蓋失敗: ${error}</p>`;
+                  });
+            } else {
+                const summaryStatus = document.getElementById('summary-status');
+                if (summaryStatus) summaryStatus.innerHTML += '<p class="status-error">❌ 取消覆蓋資料</p>';
+            }
+        });
+
+        // Handle trend result
+        socket.on('trend_result', function(data) {
+            if (data.event_type === 'trend') {
+                const trendOutput = document.getElementById('trend-output');
+                const trendDownload = document.getElementById('trend-download');
+                if (trendOutput) trendOutput.innerHTML = data.trend_output.replace(/\n/g, '<br>');
+                if (trendDownload) {
+                    if (data.trend_url) {
+                        trendDownload.innerHTML = `<a href="${data.trend_url}" class="download-btn">📊 下載趨勢圖</a>`;
+                    } else {
+                        trendDownload.innerHTML = '';
+                    }
+                }
+            }
+        });
+
+        // Handle question result
+        socket.on('question_result', function(data) {
+            if (data.event_type === 'question') {
+                const questionOutput = document.getElementById('question-output');
+                if (questionOutput) questionOutput.innerHTML = data.answer.replace(/\n/g, '<br>');
+            }
+        });
+
+        // Blood pressure form submission
+        const bpForm = document.getElementById('bp-summary-form');
+        if (bpForm) {
+            bpForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const inputs = document.querySelectorAll('#bp-table input.bp-input');
+                if (!validateFormInputs(inputs)) return;
+                
+                const formData = new FormData();
+                const bpDateInput = document.getElementById('bp-date');
+                if (bpDateInput) formData.append('date', bpDateInput.value);
+                
+                inputs.forEach(input => {
+                    formData.append(input.name, input.value || '無');
+                });
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(response.statusText);
+                    return response.text();
+                }).then(data => {
+                    console.log("BP data saved:", data);
+                }).catch(error => {
+                    const summaryStatus = document.getElementById('summary-status');
+                    if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 儲存血壓紀錄失敗: ${error}</p>`;
+                });
+            });
+        }
+
+        // Blood sugar form submission
+        const sugarForm = document.getElementById('sugar-summary-form');
+        if (sugarForm) {
+            sugarForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const inputs = document.querySelectorAll('#sugar-table input.sugar-input');
+                if (!validateFormInputs(inputs)) return;
+                
+                const formData = new FormData();
+                const sugarDateInput = document.getElementById('sugar-date');
+                if (sugarDateInput) formData.append('date', sugarDateInput.value);
+
+                inputs.forEach(input => {
+                    formData.append(input.name, input.value || '無');
+                });
+                fetch('/save_health_data', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (!response.ok) throw new Error(response.statusText);
+                    return response.text();
+                }).then(data => {
+                    console.log("Sugar data saved:", data);
+                }).catch(error => {
+                    const summaryStatus = document.getElementById('summary-status');
+                    if (summaryStatus) summaryStatus.innerHTML += `<p class="status-error">❌ 儲存血糖紀錄失敗: ${error}</p>`;
+                });
+            });
+        }
+
+        // Trend form submission
+        const trendForm = document.getElementById('trend-form');
+        if (trendForm) {
+            trendForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                const trendFileInput = document.getElementById('trend-file');
+                if (trendFileInput && trendFileInput.files[0]) {
+                    formData.append('file', trendFileInput.files[0]);
+                    fetch('/upload_trend', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => response.text())
+                    .then(data => console.log('Trend upload started'))
+                    .catch(error => {
+                        const trendStatus = document.getElementById('trend-status');
+                        if (trendStatus) trendStatus.innerHTML += `<p class="status-error">❌ 上傳趨勢檔案失敗: ${error}</p>`;
+                    });
+                } else {
                     const trendStatus = document.getElementById('trend-status');
-                    if (trendStatus) trendStatus.innerHTML += `<p class="status-error">❌ 上傳趨勢檔案失敗: ${error}</p>`;
-                });
-            } else {
-                const trendStatus = document.getElementById('trend-status');
-                if (trendStatus) trendStatus.innerHTML += `<p class="status-error">❌ 請選擇一個檔案</p>`;
-            }
-        });
-    }
-    const questionForm = document.getElementById('question-form');
-    if (questionForm) {
-        questionForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData();
-            const questionInput = document.getElementById('question');
-            if (questionInput && questionInput.value.trim() !== "") {
-                formData.append('question', questionInput.value);
-                fetch('/ask_question', {
-                    method: 'POST',
-                    body: formData
-                }).then(response => response.text())
-                .then(data => console.log('Question submitted'))
-                .catch(error => {
+                    if (trendStatus) trendStatus.innerHTML += `<p class="status-error">❌ 請選擇一個檔案</p>`;
+                }
+            });
+        }
+
+        // Question form submission
+        const questionForm = document.getElementById('question-form');
+        if (questionForm) {
+            questionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData();
+                const questionInput = document.getElementById('question');
+                if (questionInput && questionInput.value.trim() !== "") {
+                    formData.append('question', questionInput.value);
+                    fetch('/ask_question', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => response.text())
+                    .then(data => console.log('Question submitted'))
+                    .catch(error => {
+                        if (error.message.toLowerCase() === 'failed to fetch') {
+                           console.error("Fetch failed, possibly network issue or server down.");
+                        }
+                        const questionStatus = document.getElementById('question-status');
+                        if (questionStatus) questionStatus.innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
+                    });
+                } else {
                     const questionStatus = document.getElementById('question-status');
-                    if (questionStatus) questionStatus.innerHTML += `<p class="status-error">❌ 問題提交失敗: ${error}</p>`;
-                });
-            } else {
-                const questionStatus = document.getElementById('question-status');
-                if (questionStatus) questionStatus.innerHTML += `<p class="status-error">❌ 請輸入問題</p>`;
-            }
-        });
-    }
-    {% endif %}
+                    if (questionStatus) questionStatus.innerHTML += `<p class="status-error">❌ 請輸入問題</p>`;
+                }
+            });
+        }
+        {% endif %}
     </script>
 </body>
 </html>
