@@ -2,3 +2,4 @@
 faiss_index
 data
 pdf_hash.txt
+audio/*.mp3
