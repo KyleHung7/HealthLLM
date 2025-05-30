@@ -97,7 +97,7 @@ graph TD
     L --> P[Voice input via ffmpeg, voice output via whisper]
 
     M & N & O & P --> Q[Return and display results to user]
-
+```
 
 ---
 ## 📅 Development Timeline
