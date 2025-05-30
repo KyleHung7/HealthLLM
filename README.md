@@ -5,12 +5,12 @@
 
 ---
 ## 🎥 Project Videos  
-**(1) Proposal Video:** [Watch on YouTube](https://youtu.be/FfFTi43dxN8)  
-**(2) Progress Report Video:** [Watch on YouTube](https://youtu.be/rVCsg0ngz98)
+### **(1) Proposal Video:** [Watch on YouTube](https://youtu.be/FfFTi43dxN8)  
+### **(2) Progress Report Video:** [Watch on YouTube](https://youtu.be/rVCsg0ngz98)
 ---
 ## 🎬 Contest Videos  
-**(1)  Product Demo Video:** [Watch on YouTube](https://youtu.be/pasdptc12KI) 
-**(2)  Final Proposal Video:** [Watch on YouTube](https://youtu.be/20EEMxKKD0s)
+### **(1)  Product Demo Video:** [Watch on YouTube](https://youtu.be/pasdptc12KI) 
+### **(2)  Final Proposal Video:** [Watch on YouTube](https://youtu.be/20EEMxKKD0s)
 ---
 
 ## 🧠 Project Overview
