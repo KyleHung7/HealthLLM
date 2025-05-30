@@ -70,8 +70,6 @@ We built a web-based platform tailored for senior healthcare that integrates:
 
 ---
 ## Workflow
-![AI prompts questions (e g , “How was the elder’s appetite today”) Caregiver inputs answers AI processes and records](https://github.com/user-attachments/assets/682b4e83-586f-4a9e-8642-fed37e1f9849)
-
 
 ```mermaid
 graph TD
