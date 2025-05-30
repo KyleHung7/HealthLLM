@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帳戶綁定</title>
+    <!-- 字體與樣式 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <link href="/static/css/navbar.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: #f0f4f8;
+            color: #333;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #a3d5d3;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            color: #064f40;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            /* text-align: center; */ /* Removed for left alignment of lists */
+            flex-grow: 1;
+        }
+
+        h2 { /* Page title */
+            color: #2c7a7b;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        h3 { /* Section titles */
+            color: #064f40; /* Darker green for section titles */
+            font-size: clamp(1rem, 3.5vw, 1.3rem);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 0.25rem;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            background: #f9fafb;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        li span { /* For the text part of the list item */
+            flex-grow: 1;
+            margin-right: 1rem;
+        }
+
+        a {
+            color: #2c7a7b;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            margin-left: 0.5rem; /* Spacing for multiple links */
+        }
+
+        a:hover {
+            color: #205e60;
+        }
+
+        .btn, button { /* General button styling */
+            padding: 0.5rem 1rem;
+            background-color: #2c7a7b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            display: inline-block; /* For a tags styled as buttons */
+        }
+
+        .btn:hover, button:hover {
+            background-color: #205e60;
+        }
+        
+        .btn-outline-secondary { /* Specific for "新增帳號連結" */
+            background-color: transparent;
+            color: #2c7a7b;
+            border: 1px solid #2c7a7b;
+        }
+        .btn-outline-secondary:hover {
+            background-color: #def7f6;
+            color: #205e60;
+        }
+
+        .action-links a { /* Styling for action links like Accept, Reject, Withdraw, Remove */
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .action-links a.accept {
+            background-color: #a3d5d3;
+            color: #064f40;
+        }
+        .action-links a.accept:hover {
+            background-color: #8accc9;
+        }
+        .action-links a.reject, .action-links a.withdraw, .action-links a.remove {
+            background-color: #f8d7da; /* Light red */
+            color: #721c24; /* Dark red */
+        }
+        .action-links a.reject:hover, .action-links a.withdraw:hover, .action-links a.remove:hover {
+            background-color: #f5c6cb;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            header {
+                padding: 0.75rem;
+                margin-bottom: 1rem;
+            }
+
+            .section {
+                padding: 1rem;
+            }
+            
+            li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            li span {
+                margin-bottom: 0.5rem;
+            }
+            .action-links {
+                width: 100%;
+                display: flex;
+                justify-content: flex-start;
+                gap: 0.5rem; /* Space between action buttons on small screens */
+            }
+            .action-links a {
+                flex-grow: 1; /* Make buttons take equal width */
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: clamp(1.2rem, 4.5vw, 1.5rem);
+            }
+            .section {
+                padding: 0.75rem;
+            }
+            h2 {
+                font-size: clamp(1.1rem, 3.5vw, 1.3rem);
+            }
+            h3 {
+                font-size: clamp(0.9rem, 3vw, 1.1rem);
+            }
+            .btn, button {
+                font-size: clamp(0.8rem, 2vw, 0.9rem);
+                width: 100%; /* Make button full width */
+                margin-top: 0.5rem;
+            }
+            .action-links a {
+                 padding: 0.5rem; /* Slightly larger touch targets */
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include "partials/navbar.html" %}
+
+    <div class="section">
+        <h2>帳戶綁定</h2>
+
+        <h3>收到的綁定請求</h3>
+        {% if received_requests %}
+        <ul>
+            {% for request in received_requests %}
+                <li>
+                    <span>用戶 {{ request.request_user_email }} 希望與您綁定。</span>
+                    <div class="action-links">
+                        <a href="/auth/binding/accept/{{ request.request_user_id }}" class="accept" onclick="return confirm('您確定要接受來自 {{ request.request_user_email }} 的綁定請求嗎？');">接受</a>
+                        <a href="/auth/binding/reject/{{ request.request_user_id }}" class="reject">拒絕</a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>目前沒有收到任何綁定請求。</p>
+        {% endif %}
+
+        <h3>已發送的綁定請求</h3>
+        {% if account_role != 'elderly' %}
+        <a href="/auth/binding/add" class="btn btn-outline-secondary" style="margin-bottom: 1rem; display: inline-block;">
+            新增帳號連結
+        </a>
+        {% endif %}
+        {% if sent_requests %}
+        <ul>
+            {% for request in sent_requests %}
+                <li>
+                    <span>您已向 {{ request.email }} 發送綁定請求。</span>
+                    <div class="action-links">
+                        <a href="/auth/binding/withdraw/{{ request.email }}" class="withdraw" onclick="return confirm('您確定要撤回對 {{ request.email }} 的綁定請求嗎？');">撤回請求</a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>目前沒有已發送的綁定請求。</p>
+        {% endif %}
+
+        <h3>已綁定的帳戶</h3>
+        {% if bound_accounts %}
+        <ul>
+            {% for email in bound_accounts %}
+                <li>
+                    <span>帳戶 Email: {{ email }}</span>
+                    <div class="action-links">
+                        <a href="/auth/binding/remove/{{ email }}" class="remove" onclick="return confirm('您確定要移除與 {{ email }} 的綁定嗎？');">移除綁定</a>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>目前沒有已綁定的帳戶。</p>
+        {% endif %}
+    </div>
+</body>
+</html>

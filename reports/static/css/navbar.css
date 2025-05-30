@@ -1,0 +1,97 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    background-color: #def7f6; /* Changed from #333 */
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02); /* Adjusted shadow */
+    backdrop-filter: blur(8px); /* Added backdrop-filter */
+    color: #333; /* Changed text color for light background */
+}
+
+/* Removed the redundant *{} and body{} from here, they should be in a global CSS file or index.html */
+
+.navbar__top {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar__user {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #064f40; /* Adjusted color for username */
+}
+
+.navbar__toggle {
+    display: none; /* Hidden by default, shown on small screens by JS */
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 25px;
+}
+
+.navbar__toggle span {
+    display: block;
+    height: 3px;
+    background-color: #2c7a7b; /* Adjusted color for toggle lines */
+    border-radius: 3px;
+}
+
+.navbar__links {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: 10px;
+}
+
+.navbar__link {
+    color: #2c7a7b; /* Adjusted link color */
+    text-decoration: none;
+    padding: 8px 15px;
+    margin-right: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.navbar__link:hover, .navbar__link--active {
+    background-color: #a3d5d3; /* Adjusted hover/active background */
+    color: #064f40; /* Adjusted hover/active text color */
+}
+
+.navbar__link--logout {
+    background-color: #dc3545;
+    color: white; /* Ensure logout button text is white */
+}
+
+.navbar__link--logout:hover {
+    background-color: #c82333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar__links {
+        flex-direction: column;
+        display: none; /* Hidden by default on small screens */
+        width: 100%;
+    }
+
+    .navbar__links.active {
+        display: flex; /* Shown when active */
+    }
+
+    .navbar__link {
+        margin-right: 0;
+        margin-bottom: 5px;
+        width: 100%;
+    }
+
+    .navbar__toggle {
+        display: flex;
+    }
+}

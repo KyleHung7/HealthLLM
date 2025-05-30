@@ -1,0 +1,24 @@
+{% if current_user.is_authenticated %}
+<nav class="navbar">
+    <div class="navbar__top">
+        <div class="navbar__user">
+            <span class="navbar__username">您好，{{ current_user.name }}</span>
+        </div>
+        <div class="navbar__toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    <div class="navbar__links">
+        <a href="/" class="navbar__link {% if request.path == '/' %}navbar__link--active{% endif %}">首頁</a>
+        {% if account_role == 'general' %}
+        <a href="{{ url_for('general_dashboard') }}" class="navbar__link {% if request.path == url_for('general_dashboard') %}navbar__link--active{% endif %}">已連結帳戶</a>
+        <a href="{{ url_for('rag_chat') }}" class="navbar__link {% if request.path == url_for('rag_chat') %}navbar__link--active{% endif %}">健康問答</a>
+        {% endif %}
+        <a href="/auth/profile" class="navbar__link {% if request.path == '/auth/profile' %}navbar__link--active{% endif %}">我的帳號</a>
+        <a href="/auth/logout" class="navbar__link navbar__link--logout">登出</a>
+    </div>
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+</nav>
+{% endif %}

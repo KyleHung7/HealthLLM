@@ -3,3 +3,6 @@ __pycache__/
 users/
 tmp/
 gmail_credentials.json
+instance
+static
+uploads

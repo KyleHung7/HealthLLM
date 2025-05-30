@@ -321,23 +321,23 @@
             <tbody>
                 <tr>
                     <td data-label="早上">早上</td>
-                    <td data-label="收縮壓"><input type="number" class="bp-input" name="systolic" step="1" min="50" max="250" title="輸入早上收縮壓"></td>
-                    <td data-label="舒張壓"><input type="number" class="bp-input" name="diastolic" step="1" min="30" max="150" title="輸入早上舒張壓"></td>
-                    <td data-label="脈搏"><input type="number" class="bp-input" name="pulse" step="1" min="30" max="200" title="輸入早上脈搏"></td>
+                    <td data-label="收縮壓"><input type="number" class="bp-input" name="morning_systolic" step="1" min="50" max="250" title="輸入早上收縮壓"></td>
+                    <td data-label="舒張壓"><input type="number" class="bp-input" name="morning_diastolic" step="1" min="30" max="150" title="輸入早上舒張壓"></td>
+                    <td data-label="脈搏"><input type="number" class="bp-input" name="morning_pulse" step="1" min="30" max="200" title="輸入早上脈搏"></td>
                     <td><button type="button" onclick="submitBPSlot('morning')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="中午">中午</td>
-                    <td data-label="收縮壓"><input type="number" class="bp-input" name="systolic" step="1" min="50" max="250" title="輸入中午收縮壓"></td>
-                    <td data-label="舒張壓"><input type="number" class="bp-input" name="diastolic" step="1" min="30" max="150" title="輸入中午舒張壓"></td>
-                    <td data-label="脈搏"><input type="number" class="bp-input" name="pulse" step="1" min="30" max="200" title="輸入中午脈搏"></td>
+                    <td data-label="收縮壓"><input type="number" class="bp-input" name="noon_systolic" step="1" min="50" max="250" title="輸入中午收縮壓"></td>
+                    <td data-label="舒張壓"><input type="number" class="bp-input" name="noon_diastolic" step="1" min="30" max="150" title="輸入中午舒張壓"></td>
+                    <td data-label="脈搏"><input type="number" class="bp-input" name="noon_pulse" step="1" min="30" max="200" title="輸入中午脈搏"></td>
                     <td><button type="button" onclick="submitBPSlot('noon')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="晚上">晚上</td>
-                    <td data-label="收縮壓"><input type="number" class="bp-input" name="systolic" step="1" min="50" max="250" title="輸入晚上收縮壓"></td>
-                    <td data-label="舒張壓"><input type="number" class="bp-input" name="diastolic" step="1" min="30" max="150" title="輸入晚上舒張壓"></td>
-                    <td data-label="脈搏"><input type="number" class="bp-input" name="pulse" step="1" min="30" max="200" title="輸入晚上脈搏"></td>
+                    <td data-label="收縮壓"><input type="number" class="bp-input" name="evening_systolic" step="1" min="50" max="250" title="輸入晚上收縮壓"></td>
+                    <td data-label="舒張壓"><input type="number" class="bp-input" name="evening_diastolic" step="1" min="30" max="150" title="輸入晚上舒張壓"></td>
+                    <td data-label="脈搏"><input type="number" class="bp-input" name="evening_pulse" step="1" min="30" max="200" title="輸入晚上脈搏"></td>
                     <td><button type="button" onclick="submitBPSlot('evening')">📄 儲存</button></td>
                 </tr>
             </tbody>
@@ -378,20 +378,20 @@
             <tbody>
                 <tr>
                     <td data-label="早餐">早餐</td>
-                    <td data-label="空腹"><input type="number" class="sugar-input" name="fasting" step="1" min="50" max="300" title="輸入早餐前血糖"></td>
-                    <td data-label="餐後"><input type="number" class="sugar-input" name="postprandial" step="1" min="70" max="400" title="輸入早餐後血糖"></td>
+                    <td data-label="空腹"><input type="number" class="sugar-input" name="morning_fasting" step="1" min="50" max="300" title="輸入早餐前血糖"></td>
+                    <td data-label="餐後"><input type="number" class="sugar-input" name="morning_postprandial" step="1" min="70" max="400" title="輸入早餐後血糖"></td>
                     <td><button type="button" onclick="submitBSSlot('morning')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="午餐">午餐</td>
-                    <td data-label="空腹"><input type="number" class="sugar-input" name="fasting" step="1" min="50" max="300" title="輸入午餐前血糖"></td>
-                    <td data-label="餐後"><input type="number" class="sugar-input" name="postprandial" step="1" min="70" max="400" title="輸入午餐後血糖"></td>
+                    <td data-label="空腹"><input type="number" class="sugar-input" name="noon_fasting" step="1" min="50" max="300" title="輸入午餐前血糖"></td>
+                    <td data-label="餐後"><input type="number" class="sugar-input" name="noon_postprandial" step="1" min="70" max="400" title="輸入午餐後血糖"></td>
                     <td><button type="button" onclick="submitBSSlot('noon')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="晚餐">晚餐</td>
-                    <td data-label="空腹"><input type="number" class="sugar-input" name="fasting" step="1" min="50" max="300" title="輸入晚餐前血糖"></td>
-                    <td data-label="餐後"><input type="number" class="sugar-input" name="postprandial" step="1" min="70" max="400" title="輸入晚餐後血糖"></td>
+                    <td data-label="空腹"><input type="number" class="sugar-input" name="evening_fasting" step="1" min="50" max="300" title="輸入晚餐前血糖"></td>
+                    <td data-label="餐後"><input type="number" class="sugar-input" name="evening_postprandial" step="1" min="70" max="400" title="輸入晚餐後血糖"></td>
                     <td><button type="button" onclick="submitBSSlot('evening')">📄 儲存</button></td>
                 </tr>
             </tbody>
@@ -455,6 +455,7 @@
             <button type="button" id="analyze-account-data-btn">🔍 分析帳戶數據趨勢</button>
         </div>
         <div id="trend-status"></div>
+        <div id="trend-output-plotly" style="width:100%; height:400px;"></div> {# New div for Plotly chart #}
         <div id="trend-output"></div>
         <div id="trend-download"></div>
         <div id="report-download"></div>
@@ -529,17 +530,17 @@
                 const bpRows = document.querySelectorAll('#bp-table tbody tr');
                 bpRows.forEach((row, index) => {
                     const timeSlot = ['morning', 'noon', 'evening'][index];
-                    row.querySelector('input[name="systolic"]').value = data[`${timeSlot}_systolic`] || '';
-                    row.querySelector('input[name="diastolic"]').value = data[`${timeSlot}_diastolic`] || '';
-                    row.querySelector('input[name="pulse"]').value = data[`${timeSlot}_pulse`] || '';
+                    row.querySelector(`input[name="${timeSlot}_systolic"]`).value = data[`${timeSlot}_systolic`] || '';
+                    row.querySelector(`input[name="${timeSlot}_diastolic"]`).value = data[`${timeSlot}_diastolic`] || '';
+                    row.querySelector(`input[name="${timeSlot}_pulse"]`).value = data[`${timeSlot}_pulse`] || '';
                 });
 
                 // Populate Sugar inputs
                 const sugarRows = document.querySelectorAll('#sugar-table tbody tr');
                 sugarRows.forEach((row, index) => {
                     const timeSlot = ['morning', 'noon', 'evening'][index];
-                    row.querySelector('input[name="fasting"]').value = data[`${timeSlot}_fasting`] || '';
-                    row.querySelector('input[name="postprandial"]').value = data[`${timeSlot}_postprandial`] || '';
+                    row.querySelector(`input[name="${timeSlot}_fasting"]`).value = data[`${timeSlot}_fasting`] || '';
+                    row.querySelector(`input[name="${timeSlot}_postprandial"]`).value = data[`${timeSlot}_postprandial`] || '';
                 });
 
                 updateStatuses();
@@ -751,8 +752,8 @@
         for (let i = 0; i < bpRows.length; i++) {
             const row = bpRows[i];
             const timeSlot = ['morning', 'noon', 'evening'][i];
-            const systolic = parseFloat(row.querySelector('input[name="systolic"]').value) || 0;
-            const diastolic = parseFloat(row.querySelector('input[name="diastolic"]').value) || 0;
+            const systolic = parseFloat(row.querySelector(`input[name="${timeSlot}_systolic"]`).value) || 0;
+            const diastolic = parseFloat(row.querySelector(`input[name="${timeSlot}_diastolic"]`).value) || 0;
             if (systolic && diastolic) {
                 const result = await checkBPStatus(systolic, diastolic);
                 bpStatusHtml += `${timeSlot === 'morning' ? '早上' : timeSlot === 'noon' ? '中午' : '晚上'}：<span class="${result.status.toLowerCase().replace(/\s/g, '')}">${result.status}</span> - ${result.advice}<br>`;
@@ -765,8 +766,8 @@
         for (let i = 0; i < bsRows.length; i++) {
             const row = bsRows[i];
             const timeSlot = ['morning', 'noon', 'evening'][i];
-            const fasting = parseFloat(row.querySelector('input[name="fasting"]').value) || 0;
-            const postprandial = parseFloat(row.querySelector('input[name="postprandial"]').value) || 0;
+            const fasting = parseFloat(row.querySelector(`input[name="${timeSlot}_fasting"]`).value) || 0;
+            const postprandial = parseFloat(row.querySelector(`input[name="${timeSlot}_postprandial"]`).value) || 0;
             if (fasting) {
                 const result = await checkBSStatus(fasting, 'fasting');
                 bsStatusHtml += `${timeSlot === 'morning' ? '早餐' : timeSlot === 'noon' ? '午餐' : '晚餐'} 空腹：<span class="${result.status.toLowerCase().replace(/\s/g, '')}">${result.status}</span> - ${result.advice}<br>`;
@@ -797,9 +798,9 @@
 
         const formData = new FormData();
         formData.append('date', date);
-        formData.append(`${timeSlot}_systolic`, row.querySelector('input[name="systolic"]').value.trim() || '');
-        formData.append(`${timeSlot}_diastolic`, row.querySelector('input[name="diastolic"]').value.trim() || '');
-        formData.append(`${timeSlot}_pulse`, row.querySelector('input[name="pulse"]').value.trim() || '');
+        formData.append(`${timeSlot}_systolic`, row.querySelector(`input[name="${timeSlot}_systolic"]`).value.trim() || '');
+        formData.append(`${timeSlot}_diastolic`, row.querySelector(`input[name="${timeSlot}_diastolic"]`).value.trim() || '');
+        formData.append(`${timeSlot}_pulse`, row.querySelector(`input[name="${timeSlot}_pulse"]`).value.trim() || '');
 
         try {
             const response = await fetch('/save_health_data', { method: 'POST', body: formData });
@@ -826,9 +827,9 @@
                     const bpRows = document.querySelectorAll('#bp-table tbody tr');
                     bpRows.forEach((row, index) => {
                         const slot = ['morning', 'noon', 'evening'][index];
-                        row.querySelector('input[name="systolic"]').value = data[`${slot}_systolic`] || '';
-                        row.querySelector('input[name="diastolic"]').value = data[`${slot}_diastolic`] || '';
-                        row.querySelector('input[name="pulse"]').value = data[`${slot}_pulse`] || '';
+                        row.querySelector(`input[name="${slot}_systolic"]`).value = data[`${slot}_systolic`] || '';
+                        row.querySelector(`input[name="${slot}_diastolic"]`).value = data[`${slot}_diastolic`] || '';
+                        row.querySelector(`input[name="${slot}_pulse"]`).value = data[`${slot}_pulse`] || '';
                     });
                     updateStatuses();
                 })
@@ -856,8 +857,8 @@
 
         const formData = new FormData();
         formData.append('date', date);
-        formData.append(`${timeSlot}_fasting`, row.querySelector('input[name="fasting"]').value.trim() || '');
-        formData.append(`${timeSlot}_postprandial`, row.querySelector('input[name="postprandial"]').value.trim() || '');
+        formData.append(`${timeSlot}_fasting`, row.querySelector(`input[name="${timeSlot}_fasting"]`).value.trim() || '');
+        formData.append(`${timeSlot}_postprandial`, row.querySelector(`input[name="${timeSlot}_postprandial"]`).value.trim() || '');
 
         try {
             const response = await fetch('/save_health_data', { method: 'POST', body: formData });
@@ -884,8 +885,8 @@
                     const sugarRows = document.querySelectorAll('#sugar-table tbody tr');
                     sugarRows.forEach((row, index) => {
                         const slot = ['morning', 'noon', 'evening'][index];
-                        row.querySelector('input[name="fasting"]').value = data[`${slot}_fasting`] || '';
-                        row.querySelector('input[name="postprandial"]').value = data[`${slot}_postprandial`] || '';
+                        row.querySelector(`input[name="${slot}_fasting"]`).value = data[`${slot}_fasting`] || '';
+                        row.querySelector(`input[name="${slot}_postprandial"]`).value = data[`${slot}_postprandial`] || '';
                     });
                     updateStatuses();
                 })
@@ -902,8 +903,9 @@
     // Socket.IO events
     socket.on('update', function(data) {
         const statusDivId = data.event_type === 'summary' ? 
-                           (data.message.includes('血壓') ? 'bp-summary-status' : 'sugar-summary-status') :
+                           (data.message.includes('血壓') || data.message.includes('血糖') ? 'bp-summary-status' : 'sugar-summary-status') : // Simplified logic
                            data.event_type === 'trend' ? 'trend-status' :
+                           data.event_type === 'report' ? 'trend-status' : // Report status also goes to trend-status
                            'question-status';
         const statusDiv = document.getElementById(statusDivId);
         if (statusDiv) {
@@ -926,18 +928,23 @@
                 trendStatus.innerHTML += `<p class="status-success">🟢 ${data.message}</p>`;
                 trendStatus.scrollTop = trendStatus.scrollHeight;
             }
-            if (trendOutput && data.trend_output) {
-                trendOutput.innerHTML = data.trend_output.replace(/\n/g, '<br>');
+            if (trendOutput && data.trend_output_text) { // Changed from data.trend_output
+                trendOutput.innerHTML = data.trend_output_text.replace(/\n/g, '<br>');
             }
             if (trendDownload && data.trend_url) {
                 trendDownload.innerHTML = `<a href="${data.trend_url}" class="download-btn" target="_blank">📊 下載趨勢圖</a>`;
+            } else {
+                trendDownload.innerHTML = ''; // Clear if no URL
             }
             if (reportDownload && data.pdf_url) {
                 reportDownload.innerHTML = `<a href="${data.pdf_url}" class="download-btn" target="_blank" style="margin-left: 10px;">📄 下載趨勢分析PDF報告</a>`;
-            }
-            if (data.plot_data) {
-                Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
             } else {
+                reportDownload.innerHTML = ''; // Clear if no URL
+            }
+            const plotlyDiv = document.getElementById('trend-output-plotly');
+            if (plotlyDiv && data.plot_data) {
+                Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
+            } else if (plotlyDiv) {
                 Plotly.purge('trend-output-plotly');
             }
         }
@@ -996,9 +1003,10 @@
                 if (data.success) {
                     trendStatus.innerHTML += `<p class="status-success">🟢 ${data.message}</p>`;
                     trendStatus.scrollTop = trendStatus.scrollHeight;
-                    if (data.plot_data) {
+                    const plotlyDiv = document.getElementById('trend-output-plotly');
+                    if (plotlyDiv && data.plot_data) {
                         Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
-                    } else {
+                    } else if (plotlyDiv) {
                         Plotly.purge('trend-output-plotly');
                     }
                     document.getElementById('trend-output').innerHTML = data.trend_output_text || "無分析結果。";
@@ -1044,9 +1052,10 @@
                 if (data.success) {
                     trendStatus.innerHTML += `<p class="status-success">🟢 ${data.message}</p>`;
                     trendStatus.scrollTop = trendStatus.scrollHeight;
-                    if (data.plot_data) {
+                    const plotlyDiv = document.getElementById('trend-output-plotly');
+                    if (plotlyDiv && data.plot_data) {
                         Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
-                    } else {
+                    } else if (plotlyDiv) {
                         Plotly.purge('trend-output-plotly');
                     }
                     document.getElementById('trend-output').innerHTML = data.trend_output_text || "無分析結果。";
