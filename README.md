@@ -73,7 +73,7 @@ We built a web-based platform tailored for senior healthcare that integrates:
 ![AI prompts questions (e g , “How was the elder’s appetite today”) Caregiver inputs answers AI processes and records](https://github.com/user-attachments/assets/682b4e83-586f-4a9e-8642-fed37e1f9849)
 
 
-%%{init: {'theme': 'default', 'themeVariables': { 'fontSize': '24px' }}}%%
+```mermaid
 graph TD
     A[User fills in health information] --> B{Choose input method}
     B --> C1[Manually enter values]
@@ -97,6 +97,7 @@ graph TD
     L --> P[Voice input via ffmpeg, voice output via whisper]
 
     M & N & O & P --> Q[Return and display results to user]
+
 
 ---
 ## 📅 Development Timeline
