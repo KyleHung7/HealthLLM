@@ -1,8 +1,9 @@
 import os
 import threading
 import pandas as pd
-from flask import Flask, render_template, request, send_file, make_response, redirect, url_for, jsonify
-from flask_socketio import SocketIO
+import requests
+from flask import Flask, render_template, request, send_file, make_response, redirect, url_for, jsonify, Response
+from flask_socketio import SocketIO, join_room
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from flask_login import login_required, current_user
@@ -19,6 +20,11 @@ from lib import mdToHtml, clear_user_data_folder
 
 # Load environment variables
 load_dotenv()
+
+# Get RAG server URL from environment variables
+RAG_SERVER_URL = os.getenv("RAG_SERVER_URL")
+if not RAG_SERVER_URL:
+    print("Warning: RAG_SERVER_URL not set in environment variables.")
 
 # Allow OAuth over HTTP for development
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -40,6 +46,21 @@ init_auth(app)
 app.register_blueprint(img_recognition_bp) # Added blueprint registration
 
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
+
+@socketio.on('connect')
+def handle_connect():
+    if current_user.is_authenticated:
+        join_room(current_user.id)
+        app.logger.info(f"SocketIO: Client {request.sid} joined room {current_user.id} for user {current_user.name}")
+    else:
+        app.logger.info(f"SocketIO: Anonymous client {request.sid} connected.")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    # Rooms are generally cleaned up automatically by Flask-SocketIO when a client disconnects.
+    # If explicit leave_room(current_user.id) were needed, current_user might not be reliably available here.
+    # Relying on automatic cleanup is standard.
+    app.logger.info(f"SocketIO: Client {request.sid} disconnected.")
 
 logLess = False
 if logLess:
@@ -99,7 +120,12 @@ def general_dashboard():
 
     if account_role == 'general':
         # Only general users can access this dashboard.
-        return render_template('general_user_dashboard.html')
+        # response = make_response(render_template('general_user_dashboard.html'))
+        response = make_response(render_template('index_mixed.html'))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '-1'
+        return response
     else:
         # If an elderly user or any other role tries to access, redirect to their default page.
         return redirect(url_for('index'))
@@ -123,7 +149,7 @@ def get_linked_accounts_api():
 def get_linked_health_data_generic(linked_user_id, data_type_csv_name, target_date_str):
     # Security check: Ensure current_user is linked to linked_user_id
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'error': 'Unauthorized access to linked account data.'}), 403
 
     if not target_date_str:
@@ -195,14 +221,13 @@ def get_linked_sugar_data_api():
     return get_linked_health_data_generic(linked_user_id, 'blood_sugar.csv', target_date)
 
 # API endpoint to update linked account's health data
-def update_linked_health_data_generic(linked_user_id, records_data, data_type, csv_filename):
+def update_linked_health_data_generic(linked_user_id, records_data, data_type):
     # Security check
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'success': False, 'message': '未授權更新此帳戶的資料。'}), 403
 
     linked_user_folder = get_user_upload_folder(linked_user_id)
-    csv_path = os.path.join(linked_user_folder, csv_filename)
 
     validated_records = []
     for record_dict in records_data:
@@ -217,68 +242,19 @@ def update_linked_health_data_generic(linked_user_id, records_data, data_type, c
         if validation_error:
             return jsonify({'success': False, 'message': f"資料驗證失敗 (日期 {record_dict['date']}): {validation_error}"}), 400
         
-        # Prepare record for CSV: use None for empty values which will become empty strings in CSV
-        # Or keep '無' if that's the desired representation for truly absent data.
-        # The frontend sends null for empty inputs, which are converted to None by request.get_json().
-        # For CSV, pandas will write None as empty strings.
-        csv_ready_record = {k: (v if v is not None else '') for k, v in record_dict.items()}
-        validated_records.append(csv_ready_record)
+        validated_records.append(record_dict)
 
     try:
-        if not validated_records: # If all rows were empty and thus skipped by frontend logic
-             # Create an empty DataFrame with correct columns to effectively clear the CSV
-            if data_type == 'blood_pressure':
-                columns = ['Date', 'Morning_Systolic', 'Morning_Diastolic', 'Morning_Pulse', 
-                           'Noon_Systolic', 'Noon_Diastolic', 'Noon_Pulse',
-                           'Evening_Systolic', 'Evening_Diastolic', 'Evening_Pulse']
-            else: # blood_sugar
-                columns = ['Date', 'Morning_Fasting', 'Morning_Postprandial', 
-                           'Noon_Fasting', 'Noon_Postprandial',
-                           'Evening_Fasting', 'Evening_Postprandial']
-            df = pd.DataFrame(columns=columns)
-        else:
-            df = pd.DataFrame(validated_records)
-             # Ensure correct column order and presence, matching save_health_data_background
-            if data_type == 'blood_pressure':
-                # Map frontend names to CSV column names
-                column_map = {
-                    'date': 'Date', 'morning_systolic': 'Morning_Systolic', 'morning_diastolic': 'Morning_Diastolic', 'morning_pulse': 'Morning_Pulse',
-                    'noon_systolic': 'Noon_Systolic', 'noon_diastolic': 'Noon_Diastolic', 'noon_pulse': 'Noon_Pulse',
-                    'evening_systolic': 'Evening_Systolic', 'evening_diastolic': 'Evening_Diastolic', 'evening_pulse': 'Evening_Pulse'
-                }
-                df.rename(columns=column_map, inplace=True)
-                # Ensure all columns are present
-                expected_bp_cols = ['Date', 'Morning_Systolic', 'Morning_Diastolic', 'Morning_Pulse', 'Noon_Systolic', 'Noon_Diastolic', 'Noon_Pulse', 'Evening_Systolic', 'Evening_Diastolic', 'Evening_Pulse']
-                for col in expected_bp_cols:
-                    if col not in df.columns:
-                        df[col] = ''
-                df = df[expected_bp_cols] # Order columns
+        # Use save_health_data_background for each record with overwrite=True
+        for record in validated_records:
+            threading.Thread(target=save_health_data_background, args=(record, data_type, linked_user_folder, linked_user_id, True)).start()
 
-            elif data_type == 'blood_sugar':
-                column_map = {
-                    'date': 'Date', 'morning_fasting': 'Morning_Fasting', 'morning_postprandial': 'Morning_Postprandial',
-                    'noon_fasting': 'Noon_Fasting', 'noon_postprandial': 'Noon_Postprandial',
-                    'evening_fasting': 'Evening_Fasting', 'evening_postprandial': 'Evening_Postprandial'
-                }
-                df.rename(columns=column_map, inplace=True)
-                expected_sugar_cols = ['Date', 'Morning_Fasting', 'Morning_Postprandial', 'Noon_Fasting', 'Noon_Postprandial', 'Evening_Fasting', 'Evening_Postprandial']
-                for col in expected_sugar_cols:
-                    if col not in df.columns:
-                        df[col] = ''
-                df = df[expected_sugar_cols]
-        
-        # Enforce one record per day by taking the last entry if duplicates for a date exist
-        if not df.empty:
-            df = df.groupby('Date', as_index=False).last()
-            
-        df.sort_values(by='Date', inplace=True)
-        df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-        # Emit update to the specific linked user dashboard if possible, or a general success
-        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")} 資料已成功更新。', 'event_type': 'summary', 'target': f'linked_{data_type}'})
+        # Emit update to the current user who performed the action
+        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")} 資料已成功更新。', 'event_type': 'summary', 'target': f'linked_{data_type}'}, room=current_user.id)
         return jsonify({'success': True, 'message': f'{data_type.replace("_", " ")} 資料已成功更新。'})
     except Exception as e:
         app.logger.error(f"Error saving linked {data_type} data for user {linked_user_id}: {e}")
-        socketio.emit('update', {'message': f'❌ 更新連結帳戶 {data_type.replace("_", " ")} 資料時發生錯誤: {str(e)}', 'event_type': 'summary', 'target': f'linked_{data_type}'})
+        socketio.emit('update', {'message': f'❌ 更新連結帳戶 {data_type.replace("_", " ")} 資料時發生錯誤: {str(e)}', 'event_type': 'summary', 'target': f'linked_{data_type}'}, room=current_user.id)
         return jsonify({'success': False, 'message': f'儲存失敗: {str(e)}'}), 500
 
 @app.route('/update_linked_bp_data', methods=['POST'])
@@ -289,7 +265,7 @@ def update_linked_bp_data_api():
     records = data.get('records')
     if not linked_user_id or records is None: # records can be an empty list
         return jsonify({'success': False, 'message': '缺少 user_id 或 records 資料。'}), 400
-    return update_linked_health_data_generic(linked_user_id, records, 'blood_pressure', 'blood_pressure.csv')
+    return update_linked_health_data_generic(linked_user_id, records, 'blood_pressure')
 
 @app.route('/update_linked_sugar_data', methods=['POST'])
 @login_required
@@ -299,7 +275,7 @@ def update_linked_sugar_data_api():
     records = data.get('records')
     if not linked_user_id or records is None:
         return jsonify({'success': False, 'message': '缺少 user_id 或 records 資料。'}), 400
-    return update_linked_health_data_generic(linked_user_id, records, 'blood_sugar', 'blood_sugar.csv')
+    return update_linked_health_data_generic(linked_user_id, records, 'blood_sugar')
 
 # Validate input values
 def validate_health_data(data, data_type):
@@ -337,7 +313,7 @@ def validate_health_data(data, data_type):
     return None
 
 # Background task for saving health data
-def save_health_data_background(data_dict, data_type, user_folder, overwrite=False):
+def save_health_data_background(data_dict, data_type, user_folder, user_id, overwrite=False):
     try:
         # Convert form data to DataFrame
         data = {'Date': [data_dict['date']]}
@@ -406,9 +382,9 @@ def save_health_data_background(data_dict, data_type, user_folder, overwrite=Fal
                             'message': f'🟡 {data_type.replace("_", " ")} 當日資料已存在且與提交內容不同，是否覆蓋？',
                             'data': data_dict,
                             'data_type': data_type,
-                            'user_folder': user_folder, # Not strictly needed by client for this, but consistent
+                            'user_folder': user_folder, 
                             'event_type': 'summary'
-                        })
+                        }, room=user_id)
                         return # Wait for user confirmation via /overwrite_health_data
                 
                 # If overwrite is True, or if not prompting for overwrite (e.g. new data matches existing or only fills '無')
@@ -422,10 +398,10 @@ def save_health_data_background(data_dict, data_type, user_folder, overwrite=Fal
         new_df.sort_values(by='Date', inplace=True) # Keep CSV sorted by date
         new_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
         
-        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")}紀錄儲存成功', 'event_type': 'summary'})
+        socketio.emit('update', {'message': f'🟢 {data_type.replace("_", " ")}紀錄儲存成功', 'event_type': 'summary'}, room=user_id)
     except Exception as e:
-        app.logger.error(f"Error in save_health_data_background for {data_type}, user {user_folder}: {str(e)}")
-        socketio.emit('update', {'message': f"❌ {data_type.replace('_', ' ')}紀錄儲存錯誤: {str(e)}", 'event_type': 'summary'})
+        app.logger.error(f"Error in save_health_data_background for {data_type}, user {user_id} (folder {user_folder}): {str(e)}")
+        socketio.emit('update', {'message': f"❌ {data_type.replace('_', ' ')}紀錄儲存錯誤: {str(e)}", 'event_type': 'summary'}, room=user_id)
 
 # Background task for trend analysis
 def trend_background_task(file_path, user_id):
@@ -436,20 +412,20 @@ def trend_background_task(file_path, user_id):
         # Determine data_type based on CSV validation
         data_type = 'blood_pressure' if validate_bp_csv(df) else 'blood_sugar' if validate_sugar_csv(df) else None
         if not data_type:
-            socketio.emit('update', {'message': '❌ CSV 檔案格式不符合血壓或血糖分析要求', 'event_type': 'trend'})
+            socketio.emit('update', {'message': '❌ CSV 檔案格式不符合血壓或血糖分析要求', 'event_type': 'trend'}, room=user_id)
             return
 
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         clear_user_data_folder(user_id, "trend")
         result = health_trend_analysis(file_path, user_id, timestamp)
-        socketio.emit('update', {'message': '🟢 趨勢分析完成', 'event_type': 'trend'})
+        socketio.emit('update', {'message': '🟢 趨勢分析完成', 'event_type': 'trend'}, room=user_id)
         socketio.emit('trend_result', {
             'trend_output': result,
             'trend_url': f'/download_trend/{user_id}/{data_type}/{timestamp}',
             'event_type': 'trend'
-        })
+        }, room=user_id)
     except Exception as e:
-        socketio.emit('update', {'message': f"❌ 趨勢分析錯誤: {str(e)}", 'event_type': 'trend'})
+        socketio.emit('update', {'message': f"❌ 趨勢分析錯誤: {str(e)}", 'event_type': 'trend'}, room=user_id)
 
 # Save health data to CSV
 @app.route('/save_health_data', methods=['POST'])
@@ -486,10 +462,10 @@ def save_health_data():
             
             validation_error_bp = validate_health_data(bp_payload, 'blood_pressure')
             if validation_error_bp:
-                socketio.emit('update', {'message': f"❌ 血壓輸入錯誤: {validation_error_bp}", 'event_type': 'summary'})
+                socketio.emit('update', {'message': f"❌ 血壓輸入錯誤: {validation_error_bp}", 'event_type': 'summary'}, room=current_user.id)
             else:
-                socketio.emit('update', {'message': '🟢 血壓資料上傳成功，開始儲存...', 'event_type': 'summary'})
-                threading.Thread(target=save_health_data_background, args=(bp_payload, 'blood_pressure', user_folder)).start()
+                socketio.emit('update', {'message': '🟢 血壓資料上傳成功，開始儲存...', 'event_type': 'summary'}, room=current_user.id)
+                threading.Thread(target=save_health_data_background, args=(bp_payload, 'blood_pressure', user_folder, current_user.id)).start()
                 bp_processed_successfully = True
         
         if actual_sugar_data_present:
@@ -500,14 +476,14 @@ def save_health_data():
 
             validation_error_sugar = validate_health_data(sugar_payload, 'blood_sugar')
             if validation_error_sugar:
-                socketio.emit('update', {'message': f"❌ 血糖輸入錯誤: {validation_error_sugar}", 'event_type': 'summary'})
+                socketio.emit('update', {'message': f"❌ 血糖輸入錯誤: {validation_error_sugar}", 'event_type': 'summary'}, room=current_user.id)
             else:
-                socketio.emit('update', {'message': '🟢 血糖資料上傳成功，開始儲存...', 'event_type': 'summary'})
-                threading.Thread(target=save_health_data_background, args=(sugar_payload, 'blood_sugar', user_folder)).start()
+                socketio.emit('update', {'message': '🟢 血糖資料上傳成功，開始儲存...', 'event_type': 'summary'}, room=current_user.id)
+                threading.Thread(target=save_health_data_background, args=(sugar_payload, 'blood_sugar', user_folder, current_user.id)).start()
                 sugar_processed_successfully = True
 
         if not at_least_one_type_had_data:
-            socketio.emit('update', {'message': '⚠️ 未輸入任何健康數據。', 'event_type': 'summary'})
+            socketio.emit('update', {'message': '⚠️ 未輸入任何健康數據。', 'event_type': 'summary'}, room=current_user.id)
             return '未輸入任何健康數據。', 400
         
         # If at least one type had data, but neither was processed successfully due to validation errors
@@ -518,7 +494,7 @@ def save_health_data():
         return '資料已提交處理。', 200
     except Exception as e:
         app.logger.error(f"Error in save_health_data: {str(e)}")
-        socketio.emit('update', {'message': f"❌ 伺服器內部錯誤: {str(e)}", 'event_type': 'summary'})
+        socketio.emit('update', {'message': f"❌ 伺服器內部錯誤: {str(e)}", 'event_type': 'summary'}, room=current_user.id)
         return f'伺服器內部錯誤: {str(e)}', 500
 
 # API endpoint to get today's health data
@@ -587,11 +563,11 @@ def overwrite_health_data():
         import json
         data_dict = json.loads(data)
         
-        thread = threading.Thread(target=save_health_data_background, args=(data_dict, data_type, user_folder, True))
+        thread = threading.Thread(target=save_health_data_background, args=(data_dict, data_type, user_folder, current_user.id, True))
         thread.start()
         return '覆蓋資料已處理。', 200
     except Exception as e:
-        socketio.emit('update', {'message': f"❌ 覆蓋資料錯誤: {str(e)}", 'event_type': 'summary'})
+        socketio.emit('update', {'message': f"❌ 覆蓋資料錯誤: {str(e)}", 'event_type': 'summary'}, room=current_user.id)
         return f'覆蓋資料錯誤: {str(e)}', 500
 
 # Upload CSV for trend analysis
@@ -607,7 +583,7 @@ def upload_trend():
     file_path = os.path.join(user_folder, filename)
     file.save(file_path)
 
-    socketio.emit('update', {'message': '🟢 檔案上傳成功，開始趨勢分析...', 'event_type': 'trend'})
+    socketio.emit('update', {'message': '🟢 檔案上傳成功，開始趨勢分析...', 'event_type': 'trend'}, room=current_user.id)
     thread = threading.Thread(target=trend_background_task, args=(file_path, current_user.id))
     thread.start()
     return '檔案已上傳並開始處理。', 200
@@ -626,7 +602,7 @@ def upload_trend_linked():
 
     # Security check: Ensure current_user is linked to linked_user_id
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'success': False, 'message': '未授權分析此帳戶的資料。'}), 403
 
     filename = secure_filename(file.filename)
@@ -638,11 +614,11 @@ def upload_trend_linked():
         file.save(file_path)
     except Exception as e:
         app.logger.error(f"Error saving uploaded trend file for linked user {linked_user_id}: {e}")
-        socketio.emit('update', {'message': f"❌ 上傳趨勢分析檔案失敗: {str(e)}", 'event_type': 'trend', 'target': 'trend'})
+        socketio.emit('update', {'message': f"❌ 上傳趨勢分析檔案失敗: {str(e)}", 'event_type': 'trend', 'target': 'trend'}, room=current_user.id)
         return jsonify({'success': False, 'message': f'檔案儲存失敗: {str(e)}'}), 500
 
-    socketio.emit('update', {'message': '🟢 連結帳戶檔案上傳成功，開始趨勢分析...', 'event_type': 'trend', 'target': 'trend'})
-    # Use linked_user_id for the background task
+    socketio.emit('update', {'message': '🟢 連結帳戶檔案上傳成功，開始趨勢分析...', 'event_type': 'trend', 'target': 'trend'}, room=current_user.id)
+    # Use linked_user_id for the background task, so trend results go to the linked user
     thread = threading.Thread(target=trend_background_task, args=(file_path, linked_user_id))
     thread.start()
     return jsonify({'success': True, 'message': '連結帳戶檔案已上傳並開始處理。'}), 200
@@ -702,10 +678,10 @@ def ask_question():
     try:
         answer = answer_care_question(question)
         answer_html = mdToHtml(answer)
-        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question'})
+        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question'}, room=current_user.id)
         return '問題已處理', 200
     except Exception as e:
-        socketio.emit('update', {'message': f"❌ 問題回答錯誤: {str(e)}", 'event_type': 'question'})
+        socketio.emit('update', {'message': f"❌ 問題回答錯誤: {str(e)}", 'event_type': 'question'}, room=current_user.id)
     return '問題處理錯誤', 500
 
 # Answer caregiver questions for a LINKED account
@@ -722,7 +698,7 @@ def ask_question_linked():
 
     # Security check: Ensure current_user is linked to linked_user_id
     current_user_settings = load_user_settings(current_user.id)
-    if linked_user_id not in current_user_settings.get('bound_accounts', []):
+    if (linked_user_id not in current_user_settings.get('bound_accounts', [])) and (current_user.id != linked_user_id):
         return jsonify({'success': False, 'message': '未授權查詢此帳戶的問題。'}), 403
     
     # For now, answer_care_question is generic. If it needs linked_user_id context,
@@ -731,12 +707,123 @@ def ask_question_linked():
         answer = answer_care_question(question) # Potentially pass linked_user_id if needed by the function
         answer_html = mdToHtml(answer)
         # The 'target' for socketio event might need adjustment if specific UI elements for linked Q&A exist
-        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question', 'target': 'question'})
+        socketio.emit('question_result', {'answer': answer_html, 'event_type': 'question', 'target': 'question'}, room=current_user.id)
         return jsonify({'success': True, 'message': '連結帳戶問題已處理'}), 200
     except Exception as e:
         app.logger.error(f"Error answering linked question for user {linked_user_id}: {e}")
-        socketio.emit('update', {'message': f"❌ 連結帳戶問題回答錯誤: {str(e)}", 'event_type': 'question', 'target': 'question'})
+        socketio.emit('update', {'message': f"❌ 連結帳戶問題回答錯誤: {str(e)}", 'event_type': 'question', 'target': 'question'}, room=current_user.id)
         return jsonify({'success': False, 'message': '問題處理錯誤'}), 500
+
+# RAG Chat page
+@app.route('/rag_chat')
+@login_required
+def rag_chat():
+    response = make_response(render_template('rag_chat.html'))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
+
+# Handle text questions for RAG
+@app.route('/rag_submit', methods=['POST'])
+@login_required
+def rag_submit():
+    question = request.form.get('question', '').strip()
+    voice_mode = request.form.get('voice_mode') == 'true'
+    print("Asking question: ", question, " Voice mode: ", voice_mode)
+
+    if not question:
+        return jsonify({'error': '請輸入問題'}), 400
+
+    if not RAG_SERVER_URL:
+        return jsonify({'error': 'RAG 伺服器地址未設定'}), 500
+
+    try:
+        # Send question to RAG server chat endpoint
+        chat_response = requests.post(f"{RAG_SERVER_URL}/submit", json={'question': question})
+        chat_response.raise_for_status() # Raise an exception for bad status codes
+        rag_answer = mdToHtml(chat_response.json().get('answer', '無法取得回答'))
+
+        audio_url = None
+        if voice_mode:
+            # Send answer to RAG server text-to-speech endpoint
+            tts_response = requests.post(f"{RAG_SERVER_URL}/record", json={'text': rag_answer})
+            tts_response.raise_for_status()
+            audio_url = tts_response.json().get('audio_url')
+
+        return jsonify({'answer': rag_answer, 'audio': audio_url})
+
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error communicating with RAG server: {e}")
+        return jsonify({'error': f'與 RAG 伺服器通訊錯誤: {e}'}), 500
+    except Exception as e:
+        app.logger.error(f"Error processing RAG submit: {e}")
+        return jsonify({'error': f'處理 RAG 提交錯誤: {e}'}), 500
+
+# Handle voice input for RAG
+@app.route('/rag_record', methods=['POST'])
+@login_required
+def rag_record():
+    audio_file = request.files.get('audio')
+    mode = request.form.get('mode') # 'transcribe' or 'voice'
+
+    if not audio_file:
+        return jsonify({'error': '未收到音訊檔案'}), 400
+
+    if not RAG_SERVER_URL:
+        return jsonify({'error': 'RAG 伺服器地址未設定'}), 500
+
+    try:
+        # Send audio to RAG server speech-to-text endpoint
+        files = {
+            'audio': (audio_file.filename, audio_file.stream, audio_file.mimetype),
+            'mode': (None, mode) # Include mode directly in files
+        }
+        stt_response = requests.post(f"{RAG_SERVER_URL}/record", files=files)
+        stt_response.raise_for_status()
+        # The RAG server's /record endpoint handles the full voice process when mode='voice'
+        rag_response_json = stt_response.json()
+        transcription = rag_response_json.get('transcription', '無法轉錄')
+        rag_answer = mdToHtml(rag_response_json.get('answer', None)) # Answer is only present in voice mode
+        audio_url = rag_response_json.get('audio', None) # Audio URL is only present in voice mode
+
+        return jsonify({'transcription': transcription, 'answer': rag_answer, 'audio': audio_url})
+
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error communicating with RAG server: {e}")
+        return jsonify({'error': f'與 RAG 伺服器通訊錯誤: {e}'}), 500
+    except Exception as e:
+        app.logger.error(f"Error processing RAG record: {e}")
+        return jsonify({'error': f'處理 RAG 錄音錯誤: {e}'}), 500
+
+@app.route('/audio/<filename>')
+@login_required
+def serve_rag_audio(filename):
+    if not RAG_SERVER_URL:
+        app.logger.error('RAG 伺服器地址未設定')
+        # Return a default error audio file
+        return send_file('healthanaly/static/error_audio.mp3', mimetype='audio/mpeg')
+
+    try:
+        rag_audio_url = f"{RAG_SERVER_URL}/audio/{filename}"
+        response = requests.get(rag_audio_url, stream=True)
+        response.raise_for_status()
+
+        # Determine mimetype, default to MP3
+        content_type = response.headers.get('Content-Type', 'audio/mpeg')
+        
+        # Return the audio file directly to the client
+        return Response(
+            response.iter_content(chunk_size=1024),
+            status=response.status_code,
+            mimetype=content_type,
+            headers={'Content-Disposition': f'inline; filename={filename}'}
+        )
+    except requests.exceptions.RequestException as e:
+        app.logger.error(f"Error fetching audio from RAG server: {e}")
+        # Return a default error audio file
+        return send_file('healthanaly/static/error_audio.mp3', mimetype='audio/mpeg')
+
 
 # Start server
 if __name__ == '__main__':

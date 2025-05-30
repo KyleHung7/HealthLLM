@@ -2,13 +2,14 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>AI 居家照護系統：HealthLLM - 管理連結帳戶</title>
+    <title>AI 居家照護系統：HealthLLM</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
     <!-- 字體與樣式 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/navbar.css') }}" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -63,7 +64,7 @@
             border-radius: 8px;
             border: 1px solid #ccc;
         }
-        
+
         #date-navigation input[type="date"] {
              width: auto; /* Override for date picker in navigation */
         }
@@ -158,7 +159,7 @@
             text-align: center;
             background-color: transparent; /* Make input background transparent */
         }
-        
+
         td input[type="number"]:focus {
             outline: 1px solid #2c7a7b; /* Highlight on focus */
         }
@@ -174,7 +175,35 @@
         #date-navigation button {
             padding: 0.5rem 1rem; /* Smaller padding for date buttons */
         }
-        
+
+        .number-pad {
+            display: none;
+            position: absolute;
+            background: #2c7a7b;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .number-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+        .number-pad button:hover {
+            background-color: #e0e4e8;
+        }
+
         /* Mobile-specific table styling */
         @media (max-width: 768px) {
             body {
@@ -205,6 +234,9 @@
             #date-navigation button {
                 padding: 0.2rem 0.5rem; /* Smaller padding for date buttons */
             }
+            .number-pad {
+                display: none !important;
+            }
         }
 
         /* Stack table rows for very small screens */
@@ -226,7 +258,7 @@
                 padding: 0.5rem;
                 margin-bottom: 1rem; /* Space between record blocks */
             }
-            
+
             tr:last-child {
                 margin-bottom: 0;
             }
@@ -242,7 +274,7 @@
                 padding-top: 0.8rem;
                 padding-bottom: 0.8rem;
             }
-            
+
             td:last-child {
                 border-bottom: none; /* No line for the last field in a record */
             }
@@ -263,9 +295,9 @@
         }
     </style>
 </head>
-<body>
+<body data-user-id="{{ current_user.id }}">
     {% include 'partials/navbar.html' %}
-    
+
     <input type="hidden" id="auth-status" value="{{ current_user.is_authenticated }}">
 
     {% if current_user.is_authenticated %}
@@ -279,6 +311,7 @@
         <label for="linked-account-select">選擇帳戶：</label>
         <select id="linked-account-select" name="linked_account">
             <option value="">請選擇一個帳戶</option>
+            <option value="{{ current_user.id }}">自己的帳號</option>
             <!-- Options will be populated by JavaScript -->
         </select>
         <div id="linked-account-status"></div>
@@ -358,32 +391,35 @@
         </form>
         <div id="sugar-linked-status"></div>
     </div>
-
-    <div class="section">
-        <h2>📈 連結帳戶健康趨勢分析</h2>
-        <p>選擇連結帳戶後，可上傳該帳戶的照護紀錄進行分析。</p>
-        <form id="trend-form" enctype="multipart/form-data">
-            <label for="trend-file">📂 上傳照護紀錄（CSV）：</label>
-            <input type="file" id="trend-file" name="file" accept=".csv" required>
-            <button type="submit">🔍 分析健康趨勢與警示</button>
-        </form>
-        <div id="trend-status"></div>
-        <div id="trend-output"></div>
-        <div id="trend-download"></div>
     </div>
 
-    <div class="section">
-        <h2>💬 連結帳戶照護問題即時問答</h2>
-        <p>選擇連結帳戶後，可針對其狀況提出問題。</p>
-        <form id="question-form">
-            <label for="question">🧾 輸入照護問題（例如：長輩低血糖怎麼辦？）</label>
-            <textarea id="question" name="question" rows="3"></textarea>
-            <button type="submit">💡 提出建議</button>
-        </form>
-        <div id="question-status"></div>
-        <div id="question-output"></div>
+    <div id="linked-account-actions">
+        <div class="section">
+            <h2> 健康趨勢分析</h2>
+            <p>選擇連結帳戶後，可上傳該帳戶的照護紀錄進行分析。</p>
+            <form id="trend-form" enctype="multipart/form-data">
+                <label for="trend-file">📂 上傳照護紀錄（CSV）：</label>
+                <input type="file" id="trend-file" name="file" accept=".csv" required>
+                <label for="time-period">🕒 選擇分析時間範圍：</label>
+                <select id="time-period" name="time_period">
+                    <option value="today">當日</option>
+                    <option value="7days">最近 7 天</option>
+                    <option value="30days">最近 30 天</option>
+                    <option value="all">所有歷史數據</option>
+                </select>
+                <button type="submit">🔍 分析健康趨勢與警示</button>
+            </form>
+            <div id="trend-status"></div>
+            <div id="trend-output"></div>
+            <div id="trend-download"></div>
+        </div>
     </div>
+    
     {% else %}
+    <header>
+        <h1>🧠 AI 居家照護系統：HealthLLM</h1>
+        <p>用科技守護每個家庭的健康 💖</p>
+    </header>
     <div class="section login-section">
         <h2>請先登入系統</h2>
         <p>為了保障您的隱私和健康數據安全，使用系統前請先登入</p>
@@ -392,6 +428,23 @@
             使用 Google 帳號登入
         </a>
     </div>
+    <div class="section">
+        <h2>系統功能介紹</h2>
+        <div style="padding: 1rem;">
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="color: #205e60; margin-bottom: 0.5rem;">📝 健康摘要與報告產生</h3>
+                <p>上傳血壓或血糖紀錄檔案，系統會自動產生健康摘要報告，提供達標狀況與養護建議。</p>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="color: #205e60; margin-bottom: 0.5rem;">📈 健康趨勢分析</h3>
+                <p>分析健康數據長期趨勢，及早發現潛在異常變化，提供預防性建議。</p>
+            </div>
+            <div>
+                <h3 style="color: #205e60; margin-bottom: 0.5rem;">💬 照護問題即時問答</h3>
+                <p>針對長照照護問題提供專業回答與建議，協助照顧者解決照護疑難。</p>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <script>
@@ -399,8 +452,10 @@
         const socket = io();
         const linkedAccountSelect = document.getElementById('linked-account-select');
         const linkedAccountDataSection = document.getElementById('linked-account-data-section');
+        const linkedAccountActions = document.getElementById('linked-account-actions');
         const datePicker = document.getElementById('current-date-picker');
         let currentSelectedDate;
+        let currentUserId = document.body.dataset.userId;
 
         // Initialize Date Picker and Event Listeners
         document.addEventListener('DOMContentLoaded', function() {
@@ -433,7 +488,7 @@
                 datePicker.dispatchEvent(new Event('change'));
             });
 
-            // Fetch linked accounts on page load
+            // Fetch linked accounts on page load and set current user as default
             fetch('/get_linked_accounts')
                 .then(response => response.json())
                 .then(data => {
@@ -444,6 +499,11 @@
                             option.textContent = account.name;
                             linkedAccountSelect.appendChild(option);
                         });
+                        // Set current user as default
+                        linkedAccountSelect.value = currentUserId;
+                        linkedAccountDataSection.style.display = 'block';
+                        fetchDataForLinkedAccount(currentUserId, currentSelectedDate);
+
                     } else {
                         document.getElementById('linked-account-status').textContent = '沒有找到連結的帳戶。';
                     }
@@ -452,15 +512,24 @@
                     console.error('Error fetching linked accounts:', error);
                     document.getElementById('linked-account-status').textContent = '讀取連結帳戶失敗。';
                 });
+
+            // Initialize date for the current user's input forms
+            const today = new Date().toISOString().split('T')[0];
+            const bpDateElem = document.getElementById('bp-date');
+            const sugarDateElem = document.getElementById('sugar-date');
+            if (bpDateElem) bpDateElem.value = today;
+            if (sugarDateElem) sugarDateElem.value = today;
         });
 
         linkedAccountSelect.addEventListener('change', function() {
             const selectedAccountId = this.value;
             if (selectedAccountId) {
                 linkedAccountDataSection.style.display = 'block';
+                linkedAccountActions.style.display = 'block';
                 fetchDataForLinkedAccount(selectedAccountId, currentSelectedDate);
             } else {
                 linkedAccountDataSection.style.display = 'none';
+                linkedAccountActions.style.display = 'none';
             }
         });
 
@@ -518,25 +587,27 @@
                     document.getElementById('sugar-linked-status').textContent = `讀取血糖資料失敗: ${error.message}`;
                 });
         }
-        
+
         function populateBpForm(record) {
             const form = document.getElementById('bp-linked-form');
             const fields = ['morning_systolic', 'morning_diastolic', 'morning_pulse',
                             'noon_systolic', 'noon_diastolic', 'noon_pulse',
                             'evening_systolic', 'evening_diastolic', 'evening_pulse'];
-            if (record) {
-                fields.forEach(fieldName => {
-                    const inputElement = form.querySelector(`input[name="${fieldName}"]`);
-                    if (inputElement) {
-                        let value = record[fieldName];
-                        console.log()
-                        // If value is "無", null, or undefined, set input to empty string, otherwise use the value.
-                        inputElement.value = (value === '無' || value === null || typeof value === 'undefined') ? '' : value;
+            const isCurrentUser = linkedAccountSelect.value === currentUserId;
+            fields.forEach(fieldName => {
+                const inputElement = form.querySelector(`input[name="${fieldName}"]`);
+                if (inputElement) {
+                    let value = record ? record[fieldName] : '';
+                    inputElement.value = (value === '無' || value === null || typeof value === 'undefined') ? '' : value;
+                    if (isCurrentUser) {
+                        inputElement.removeAttribute('readonly');
+                        inputElement.style.backgroundColor = ''; // Remove transparent background
+                    } else {
+                        inputElement.setAttribute('readonly', true);
+                        inputElement.style.backgroundColor = 'transparent'; // Keep transparent background for linked accounts
                     }
-                });
-            } else {
-                clearBpForm();
-            }
+                }
+            });
         }
 
         function clearBpForm() {
@@ -557,17 +628,21 @@
             const fields = ['morning_fasting', 'morning_postprandial',
                             'noon_fasting', 'noon_postprandial',
                             'evening_fasting', 'evening_postprandial'];
-            if (record) {
-                fields.forEach(fieldName => {
-                    const inputElement = form.querySelector(`input[name="${fieldName}"]`);
-                    if (inputElement) {
-                        let value = record[fieldName];
-                        inputElement.value = (value === '無' || value === null || typeof value === 'undefined') ? '' : value;
-                    }
-                });
-            } else {
-                clearSugarForm();
-            }
+             const isCurrentUser = linkedAccountSelect.value === currentUserId;
+            fields.forEach(fieldName => {
+                const inputElement = form.querySelector(`input[name="${fieldName}"]`);
+                if (inputElement) {
+                     let value = record ? record[fieldName] : '';
+                    inputElement.value = (value === '無' || value === null || typeof value === 'undefined') ? '' : value;
+                    //  if (isCurrentUser) {
+                    //     inputElement.removeAttribute('readonly');
+                    //     inputElement.style.backgroundColor = ''; // Remove transparent background
+                    // } else {
+                    //     inputElement.setAttribute('readonly', true);
+                    //     inputElement.style.backgroundColor = 'transparent'; // Keep transparent background for linked accounts
+                    // }
+                }
+            });
         }
 
         function clearSugarForm() {
@@ -601,7 +676,7 @@
             record.evening_systolic = this.elements.evening_systolic.value || null;
             record.evening_diastolic = this.elements.evening_diastolic.value || null;
             record.evening_pulse = this.elements.evening_pulse.value || null;
-            
+
             const recordsToSave = [record];
             document.getElementById('bp-linked-status').textContent = '儲存中...';
 
@@ -613,7 +688,7 @@
               .then(data => {
                 document.getElementById('bp-linked-status').textContent = data.message;
                 if(data.success) {
-                    fetchDataForLinkedAccount(selectedAccountId, currentSelectedDate); 
+                    fetchDataForLinkedAccount(selectedAccountId, currentSelectedDate);
                 }
               })
               .catch(error => {
@@ -666,7 +741,8 @@
             else if (data.target === 'linked_sugar' || (data.message && data.message.includes('血糖'))) statusDivId = 'sugar-linked-status';
             else if (data.event_type === 'trend') statusDivId = 'trend-status';
             else if (data.event_type === 'question') statusDivId = 'question-status';
-            else statusDivId = 'linked-account-status'; 
+            else if (data.event_type === 'summary') statusDivId = 'summary-status'; // Added for the merged section
+            else statusDivId = 'linked-account-status';
 
             const statusDiv = document.getElementById(statusDivId);
             if (statusDiv) {
@@ -683,7 +759,7 @@
                 statusDiv.scrollTop = statusDiv.scrollHeight;
             }
         });
-        
+
         // Trend form submission (adapted for linked accounts)
         document.getElementById('trend-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -695,7 +771,8 @@
             const formData = new FormData();
             formData.append('file', document.getElementById('trend-file').files[0]);
             formData.append('user_id', selectedAccountId);
-            
+            formData.append('time_period', document.getElementById('time-period').value); // Added time period
+
             document.getElementById('trend-status').innerHTML = '<p>🔍 分析中，請稍候...</p>';
             document.getElementById('trend-output').innerHTML = '';
             document.getElementById('trend-download').innerHTML = '';
@@ -709,7 +786,7 @@
                   document.getElementById('trend-status').innerHTML = `<p class="status-error">❌ 上傳失敗: ${error}</p>`;
               });
         });
-        
+
         socket.on('trend_result', function(data) {
             if (data.event_type === 'trend') {
                 document.getElementById('trend-output').innerHTML = data.trend_output.replace(/\n/g, '<br>');
@@ -756,6 +833,106 @@
                 }
             }
         });
+
+        // Number pad logic (assuming it's still needed for input fields)
+        let activeInput = null;
+        const numberPad = document.getElementById('number-pad');
+        const isMobile = window.innerWidth <= 768;
+
+        function setupNumberPadListeners() {
+            document.querySelectorAll('.linked-data-input').forEach(function(input) {
+                input.addEventListener('click', function(e) {
+                    if (isMobile || this.readOnly) {
+                        this.focus();
+                        return;
+                    }
+                    activeInput = this;
+                    const rect = this.getBoundingClientRect();
+                    if (numberPad) {
+                        numberPad.style.display = 'grid';
+                        numberPad.style.left = `${rect.left + window.scrollX}px`;
+                        numberPad.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                    } else {
+                        console.error("Number pad element not found!");
+                    }
+                });
+            });
+
+            if (numberPad && !isMobile) {
+                const numberButtons = numberPad.querySelectorAll('.number-button');
+                numberButtons.forEach(function(button) {
+                    button.addEventListener('click', function() {
+                        const buttonValue = this.textContent.trim();
+                        if (activeInput && !activeInput.readOnly) {
+                            if (!isNaN(parseInt(buttonValue, 10)) && buttonValue.length === 1) {
+                                appendNumber(buttonValue);
+                            } else if (buttonValue === 'C') {
+                                clearNumber();
+                            } else if (buttonValue === 'OK') {
+                                closeNumberPad();
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!isMobile && activeInput && numberPad && !numberPad.contains(e.target) &&
+                !e.target.classList.contains('linked-data-input')) {
+                if (activeInput && !activeInput.readOnly) {
+                    const min = parseFloat(activeInput.min);
+                    const max = parseFloat(activeInput.max);
+                    const value = parseFloat(activeInput.value);
+                    if (activeInput.value && (isNaN(value) || value < min || value > max)) {
+                        alert(`請輸入 ${min} 到 ${max} 之間的數值`);
+                        activeInput.value = '';
+                    }
+                }
+                if (numberPad) {
+                    numberPad.style.display = 'none';
+                }
+                activeInput = null;
+            }
+        });
+
+        function appendNumber(num) {
+            if (activeInput) {
+                activeInput.value += num;
+            }
+        }
+
+        function clearNumber() {
+            if (activeInput) {
+                activeInput.value = '';
+            }
+        }
+
+        function closeNumberPad() {
+            if (activeInput) {
+                const min = parseFloat(activeInput.min);
+                const max = parseFloat(activeInput.max);
+                const value = parseFloat(activeInput.value);
+                if (activeInput.value && (isNaN(value) || value < min || value > max)) {
+                    alert(`請輸入 ${min} 到 ${max} 之間的數值`);
+                    activeInput.value = '';
+                }
+            }
+            if (numberPad) {
+                numberPad.style.display = 'none';
+            }
+            activeInput = null;
+        }
+
+        // Rest of the existing JavaScript code remains the same
+        // ... (previous code for fetchDataForLinkedAccount, populateBpForm, etc.)
+
+        // Call setup function after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            setupNumberPadListeners();
+            // Other existing DOMContentLoaded logic
+        });
+
         {% endif %}
     </script>
 </body>

@@ -3,7 +3,6 @@ from flask import redirect, url_for, session, Blueprint, render_template, make_r
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from authlib.integrations.flask_client import OAuth
 import json
-from constants.default_settings import default
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 
@@ -15,12 +14,13 @@ oauth = OAuth()
 
 # 使用者模型
 class User(UserMixin):
-    def __init__(self, id, email, name):
+    def __init__(self, id, email, name, role='general'):
         self.id = id
         self.email = email
         self.name = name
+        self.role = role
 
-# 使用者緩存
+# 使用者緩存 (全局字典，用於 Flask-Login 載入用戶)
 users = {}
 
 def init_auth(app):
@@ -48,14 +48,13 @@ def load_user(user_id):
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    # Generate and store nonce in session
     nonce = os.urandom(16).hex()
     session['nonce'] = nonce
     redirect_uri = url_for('auth.callback', _external=True)
     if os.getenv('TUNNEL_MODE') == "True":
         server_name = os.getenv("SERVER_NAME")
         if server_name:
-            redirect_uri = url_for('auth.callback', _external=True, _scheme='https')
+            redirect_uri = url_for('auth.callback', _external=True, _scheme='https', _external_host=server_name)
             print("Custom server name redirect: ", redirect_uri)
     return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
 
@@ -67,38 +66,51 @@ def callback():
         if not token:
             return 'Failed to get token', 400
             
-        # Get nonce from session
-        nonce = session.get('nonce')
+        nonce = session.pop('nonce', None)
         if not nonce:
-            return 'Invalid session', 400
+            return 'Invalid session or nonce missing', 400
             
-        # Parse ID token with nonce
         user_info = oauth.google.parse_id_token(token, nonce=nonce)
         if not user_info:
             return 'Failed to get user info', 400
 
-        user = User(
-            id=user_info['sub'],
-            email=user_info['email'],
-            name=user_info.get('name', user_info['email'])
-        )
-        
-        users[user.id] = user
+        user_id = user_info['sub']
+        user_email = user_info['email']
+        user_name = user_info.get('name', user_info['email'])
+
+        if user_id not in users:
+            user = User(
+                id=user_id,
+                email=user_email,
+                name=user_name,
+                role='general'
+            )
+            users[user.id] = user
+        else:
+            user = users[user_id]
+            user.email = user_email
+            user.name = user_name
+
         login_user(user)
         
-        # 為使用者建立個人資料夾
-        user_folder = os.path.join('users', secure_filename(user.id))
+        user_folder = os.path.join('static', 'user_data', secure_filename(user.id))
         if not os.path.exists(user_folder):
             os.makedirs(user_folder)
+            os.makedirs(os.path.join(user_folder, 'data'), exist_ok=True)
+            os.makedirs(os.path.join(user_folder, 'trend'), exist_ok=True)
+            os.makedirs(os.path.join(user_folder, 'reports'), exist_ok=True)
             
-        # 儲存使用者的 Google 電子郵件
         user_settings = load_user_settings(user.id)
-        user_settings['email'] = user_info['email']
+        user_settings['email'] = user_email
+        user_settings['name'] = user_name
+        user_settings['role'] = user.role
         save_user_settings(user.id, user_settings)
         
         return redirect(url_for('index'))
     except Exception as e:
         print(f"Auth callback error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return f"Authentication error: {str(e)}", 500
 
 # 登出路由
@@ -112,10 +124,10 @@ def logout():
 @login_required
 def profile():
     user_settings = load_user_settings(current_user.id)
-    ai_enabled = user_settings.get('ai_enabled', default("ai_enabled"))
-    email_report_enabled = user_settings.get('email_report_enabled', default('email_report_enabled'))
-    response = make_response(render_template('profile.html', ai_enabled=ai_enabled, email_report_enabled=email_report_enabled))
-    # Add cache control headers to prevent caching
+    ai_enabled = user_settings.get('ai_enabled', True)
+    email_report_enabled = user_settings.get('email_report_enabled', True)
+    account_role = user_settings.get('account_role', 'general')
+    response = make_response(render_template('profile.html', ai_enabled=ai_enabled, email_report_enabled=email_report_enabled, account_role=account_role))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '-1'
@@ -149,6 +161,8 @@ def save_account_role():
     user_settings = load_user_settings(current_user.id)
     user_settings['account_role'] = account_role
     save_user_settings(current_user.id, user_settings)
+    if current_user.id in users:
+        users[current_user.id].role = account_role
     return 'Account role saved successfully', 200
 
 @auth_bp.route('/binding/add', methods=['GET', 'POST'])
@@ -166,7 +180,6 @@ def account_binding():
         if user:
             if send_binding_request(email, current_user.email):
                 store_binding_request(email, current_user.id, current_user.email)
-                # Redirect to the binding page after sending the request
                 return redirect(url_for('auth.binding'))
             else:
                 return 'Failed to send binding request', 500
@@ -195,7 +208,6 @@ def accept_binding(request_user_id):
         binding_request = binding_requests_list[0]
         binding_requests.remove(binding_request)
 
-        # Get user settings for the current user
         user_settings = load_user_settings(current_user.id)
         bound_accounts = user_settings.get('bound_accounts', [])
         if request_user_id not in bound_accounts:
@@ -203,7 +215,6 @@ def accept_binding(request_user_id):
             user_settings['bound_accounts'] = bound_accounts
             save_user_settings(current_user.id, user_settings)
 
-        # Get user settings for the request user
         request_user = get_user_by_email(binding_request['request_user_email'])
         if request_user:
             request_user_settings = load_user_settings(request_user.id)
@@ -235,41 +246,34 @@ def withdraw_binding(email):
         binding_requests.remove(binding_request)
     return redirect(url_for('auth.binding'))
 
-# 檢查使用者是否有權限存取檔案
-def check_file_access(file_path):
-    if not current_user.is_authenticated:
-        return False
-    
-    user_folder = os.path.join('users', secure_filename(current_user.id))
-    return file_path.startswith(user_folder)
-
-# 取得使用者上傳資料夾路徑
 def get_user_upload_folder(user_id):
-    user_folder = os.path.join('users', secure_filename(user_id))
+    user_folder = os.path.join('static', 'user_data', secure_filename(user_id))
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     return user_folder
 
 def load_user_settings(user_id):
-    user_folder = os.path.join('users', secure_filename(user_id))
+    user_folder = os.path.join('static', 'user_data', secure_filename(user_id))
     settings_file = os.path.join(user_folder, 'settings.json')
     try:
-        with open(settings_file, 'r') as f:
+        with open(settings_file, 'r', encoding='utf-8') as f:
             settings = json.load(f)
             return settings
     except FileNotFoundError:
         return {}
+    except json.JSONDecodeError:
+        return {}
 
 def save_user_settings(user_id, settings):
-    user_folder = os.path.join('users', secure_filename(user_id))
+    user_folder = os.path.join('static', 'user_data', secure_filename(user_id))
     settings_file = os.path.join(user_folder, 'settings.json')
-    with open(settings_file, 'w') as f:
-        json.dump(settings, f)
+    os.makedirs(user_folder, exist_ok=True)
+    with open(settings_file, 'w', encoding='utf-8') as f:
+        json.dump(settings, f, indent=4)
 
 binding_requests = []
 
 def send_binding_request(email, current_email):
-    # TODO: Implement sending binding request logic (e.g., using email)
     print(f"Binding request sent to {email} from user {current_email}")
     return True
 
@@ -279,45 +283,48 @@ def store_binding_request(email, user_id, current_email):
     return True
 
 def get_user_by_id(user_id):
-    users_dir = os.path.join(os.getcwd(), 'users')
-    user_folder = os.path.join(users_dir, user_id)
-    if os.path.isdir(user_folder):
-        settings_file = os.path.join(user_folder, 'settings.json')
-        if os.path.exists(settings_file):
-            try:
-                with open(settings_file, 'r') as f:
-                    settings = json.load(f)
-                    # Create a User object
-                    user = User(
-                        id=user_id,
-                        email=settings.get('email'),
-                        name=settings.get('name', settings.get('email'))
-                    )
-                    return user
-            except (FileNotFoundError, json.JSONDecodeError):
-                return None
+    user = users.get(user_id)
+    if user:
+        return user
+    
+    user_settings = load_user_settings(user_id)
+    if user_settings:
+        user = User(
+            id=user_id,
+            email=user_settings.get('email'),
+            name=user_settings.get('name', user_settings.get('email')),
+            role=user_settings.get('role', 'general')
+        )
+        users[user_id] = user
+        return user
     return None
 
 def get_user_by_email(email):
-    users_dir = os.path.join(os.getcwd(), 'users')
-    for user_id in os.listdir(users_dir):
-        user_folder = os.path.join(users_dir, user_id)
-        if os.path.isdir(user_folder):
-            settings_file = os.path.join(user_folder, 'settings.json')
-            if os.path.exists(settings_file):
-                try:
-                    with open(settings_file, 'r') as f:
-                        settings = json.load(f)
-                        if settings.get('email') == email:
-                            # Create a User object
-                            user = User(
-                                id=user_id,
-                                email=settings.get('email'),
-                                name=settings.get('name', settings.get('email'))
-                            )
-                            return user
-                except (FileNotFoundError, json.JSONDecodeError):
-                    continue
+    for user_id, user_obj in users.items():
+        if user_obj.email == email:
+            return user_obj
+            
+    users_base_dir = os.path.join('static', 'user_data')
+    if os.path.exists(users_base_dir):
+        for user_id_folder in os.listdir(users_base_dir):
+            user_folder_path = os.path.join(users_base_dir, user_id_folder)
+            if os.path.isdir(user_folder_path):
+                settings_file = os.path.join(user_folder_path, 'settings.json')
+                if os.path.exists(settings_file):
+                    try:
+                        with open(settings_file, 'r', encoding='utf-8') as f:
+                            settings = json.load(f)
+                            if settings.get('email') == email:
+                                user = User(
+                                    id=user_id_folder,
+                                    email=settings.get('email'),
+                                    name=settings.get('name', settings.get('email')),
+                                    role=settings.get('role', 'general')
+                                )
+                                users[user.id] = user
+                                return user
+                    except (FileNotFoundError, json.JSONDecodeError):
+                        continue
     return None
 
 @auth_bp.route('/binding/remove/<email>')
@@ -337,7 +344,6 @@ def remove_binding(email):
             user_settings['bound_accounts'] = bound_accounts
             save_user_settings(current_user.id, user_settings)
 
-            # Remove current user from the other account's bound accounts
             other_user_settings = load_user_settings(account_id_to_remove)
             other_bound_accounts = other_user_settings.get('bound_accounts', [])
             if current_user.id in other_bound_accounts:
