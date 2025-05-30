@@ -4,13 +4,13 @@
 [@KyleHung7](https://github.com/KyleHung7) | [@samko5sam](https://github.com/samko5sam) | [@BlankTsai](https://github.com/BlankTsai)
 
 ---
-## 🎥 Project Videos  
-### **(1) Proposal Video:** [Watch on YouTube](https://youtu.be/FfFTi43dxN8)  
-### **(2) Progress Report Video:** [Watch on YouTube](https://youtu.be/rVCsg0ngz98)
+## 🎥 Initial Project Videos  
+#### **(1) Proposal Video:** [Watch on YouTube](https://youtu.be/FfFTi43dxN8)  
+#### **(2) Progress Report Video:** [Watch on YouTube](https://youtu.be/rVCsg0ngz98)
 ---
-## 🎬 Contest Videos  
-### **(1)  Product Demo Video:** [Watch on YouTube](https://youtu.be/pasdptc12KI) 
-### **(2)  Final Proposal Video:** [Watch on YouTube](https://youtu.be/20EEMxKKD0s)
+## 🎬 Contest Project Videos  
+#### **(1)  Product Demo Video:** [Watch on YouTube](https://youtu.be/pasdptc12KI) 
+#### **(2)  Final Proposal Video:** [Watch on YouTube](https://youtu.be/20EEMxKKD0s)
 ---
 
 ## 🧠 Project Overview
