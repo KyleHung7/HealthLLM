@@ -72,6 +72,32 @@ We built a web-based platform tailored for senior healthcare that integrates:
 ## Workflow
 ![AI prompts questions (e g , “How was the elder’s appetite today”) Caregiver inputs answers AI processes and records](https://github.com/user-attachments/assets/682b4e83-586f-4a9e-8642-fed37e1f9849)
 
+
+%%{init: {'theme': 'default', 'themeVariables': { 'fontSize': '24px' }}}%%
+graph TD
+    A[User fills in health information] --> B{Choose input method}
+    B --> C1[Manually enter values]
+    B --> C2[Photo recognition of health data gemini-2.5-flash-preview-04-17]
+    
+    C1 --> D{Health data validation}
+    C2 --> E[Convert image to values] --> D
+
+    D -->|Correct format| F[Save data to system]
+    D -->|Incorrect format| G[Show error message and re-enter]
+
+    F --> H{Perform analysis}
+    H --> I[Blood pressure trend analysis gemini-2.0-flash]
+    H --> J[Blood glucose trend analysis gemini-2.0-flash]
+    H --> K[Health summary generation gemini-2.0-flash]
+    H --> L[Care advice & QA via RAG: llama3.2, then gemini-2.0-flash]
+
+    I --> M[Draw blood pressure chart]
+    J --> N[Draw blood glucose chart]
+    K --> O[Generate summary text]
+    L --> P[Voice input via ffmpeg, voice output via whisper]
+
+    M & N & O & P --> Q[Return and display results to user]
+
 ---
 ## 📅 Development Timeline
 
