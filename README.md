@@ -9,7 +9,7 @@
 #### **(2) Progress Report Video:** [Watch on YouTube](https://youtu.be/rVCsg0ngz98)
 ---
 ## 🎬 Contest Project Videos  
-#### **(1)  Product Demo Video:** [Watch on YouTube](https://youtu.be/pasdptc12KI) 
+#### **(1)  Final Product Video:** [Watch on YouTube](https://youtu.be/pasdptc12KI) 
 #### **(2)  Final Proposal Video:** [Watch on YouTube](https://youtu.be/20EEMxKKD0s)
 ---
 
