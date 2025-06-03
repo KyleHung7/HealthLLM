@@ -1,7 +1,7 @@
 # AI Elderly Care Network: HealthLLM
 
 **Team Members**  
-[@KyleHung7](https://github.com/KyleHung7) | [@samko5sam](https://github.com/samko5sam) | [@BlankTsai](https://github.com/BlankTsai)
+[@KyleHung7](https://github.com/KyleHung7) | [@samko5sam](https://github.com/samko5sam) | [@BlankTsai](https://github.com/BlankTsai) | [@peculab](https://github.com/peculab)
 
 ---
 ## 🎥 Initial Project Videos  
