@@ -83,6 +83,10 @@
             background-color: #205e60;
             transform: scale(1.05);
         }
+        button:disabled {
+            background-color: #9e9e9e;
+            cursor: not-allowed;
+        }
         .login-section {
             text-align: center;
             padding: 2rem;
@@ -210,80 +214,48 @@
             padding: 1rem;
             border-radius: 8px;
             margin: 1rem 0;
+        }
+        .health-status-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
             font-size: 18px;
             font-weight: bold;
+            border-left: 5px solid;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
         }
-        .normal { background-color: #d4edda; color: #155724; }
-        .elevated { background-color: #fff3cd; color: #856404; }
-        .hypertension { background-color: #f8d7da; color: #721c24; }
-        .crisis { background-color: #dc3545; color: white; }
-        .low { background-color: #e2e3e5; color: #383d41; }
-        .time-slot-form {
-            margin-bottom: 1rem;
+        .health-status-item::before {
+            font-size: 24px;
+            margin-right: 12px;
         }
-        .time-slot-form button {
-            margin-top: 0.5rem;
-        }
+        .status-正常血壓, .status-正常空腹血糖, .status-正常餐後血糖 { background-color: #d4edda; color: #155724; border-left-color: #28a745; }
+        .status-正常血壓::before, .status-正常空腹血糖::before, .status-正常餐後血糖::before { content: '✅'; }
+        .status-血壓偏高, .status-糖尿病前期-空腹-, .status-糖尿病前期-餐後- { background-color: #fff3cd; color: #856404; border-left-color: #ffc107; }
+        .status-血壓偏高::before, .status-糖尿病前期-空腹-::before, .status-糖尿病前期-餐後-::before { content: '🟡'; }
+        .status-第一期高血壓, .status-第二期高血壓, .status-糖尿病-空腹-, .status-糖尿病-餐後- { background-color: #f8d7da; color: #721c24; border-left-color: #dc3545; }
+        .status-第一期高血壓::before, .status-第二期高血壓::before, .status-糖尿病-空腹-::before, .status-糖尿病-餐後-::before { content: '🟠'; }
+        .status-高血壓危機 { background-color: #c82333; color: white; border-left-color: #a71d2a; }
+        .status-高血壓危機::before { content: '🚨'; }
+        .status-血壓偏低, .status-低血糖-空腹-, .status-低血糖-餐後- { background-color: #e2e3e5; color: #383d41; border-left-color: #6c757d; }
+        .status-血壓偏低::before, .status-低血糖-空腹-::before, .status-低血糖-餐後-::before { content: '🔵'; }
+        
         @media (max-width: 768px) {
-            body {
-                padding: 0.5rem;
-                font-size: 16px;
-            }
-            table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-            th, td {
-                min-width: 100px;
-                font-size: 16px;
-                padding: 0.5rem;
-            }
-            input[type="number"] {
-                font-size: 16px;
-                padding: 0.3rem;
-            }
-            .number-pad {
-                display: none !important;
-            }
-            button, .download-btn, .login-btn {
-                padding: 0.6rem 1.2rem;
-                font-size: 16px;
-            }
+            body { padding: 0.5rem; font-size: 16px; }
+            table { display: block; overflow-x: auto; white-space: nowrap; }
+            th, td { min-width: 100px; font-size: 16px; padding: 0.5rem; }
+            input[type="number"] { font-size: 16px; padding: 0.3rem; }
+            .number-pad { display: none !important; }
+            button, .download-btn, .login-btn { padding: 0.6rem 1.2rem; font-size: 16px; }
         }
         @media (max-width: 480px) {
-            table {
-                display: table;
-                width: 100%;
-            }
-            thead {
-                display: none;
-            }
-            tr {
-                display: block;
-                margin-bottom: 1rem;
-            }
-            td {
-                display: block;
-                text-align: left;
-                position: relative;
-                padding-left: 50%;
-                min-width: auto;
-                border: none;
-                border-bottom: 2px solid #ccc;
-                font-size: 16px;
-            }
-            td:before {
-                content: attr(data-label);
-                position: absolute;
-                left: 0.5rem;
-                width: 45%;
-                font-weight: bold;
-            }
-            input[type="number"] {
-                width: 100%;
-                font-size: 16px;
-            }
+            table { display: table; width: 100%; }
+            thead { display: none; }
+            tr { display: block; margin-bottom: 1rem; }
+            td { display: block; text-align: left; position: relative; padding-left: 50%; min-width: auto; border: none; border-bottom: 2px solid #ccc; font-size: 16px; }
+            td:before { content: attr(data-label); position: absolute; left: 0.5rem; width: 45%; font-weight: bold; }
+            input[type="number"] { width: 100%; font-size: 16px; }
         }
     </style>
 </head>
@@ -315,7 +287,6 @@
                     <th>收縮壓 (mmHg)</th>
                     <th>舒張壓 (mmHg)</th>
                     <th>脈搏 (次/分鐘)</th>
-                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -324,37 +295,27 @@
                     <td data-label="收縮壓"><input type="number" class="bp-input" name="morning_systolic" step="1" min="50" max="250" title="輸入早上收縮壓"></td>
                     <td data-label="舒張壓"><input type="number" class="bp-input" name="morning_diastolic" step="1" min="30" max="150" title="輸入早上舒張壓"></td>
                     <td data-label="脈搏"><input type="number" class="bp-input" name="morning_pulse" step="1" min="30" max="200" title="輸入早上脈搏"></td>
-                    <td><button type="button" onclick="submitBPSlot('morning')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="中午">中午</td>
                     <td data-label="收縮壓"><input type="number" class="bp-input" name="noon_systolic" step="1" min="50" max="250" title="輸入中午收縮壓"></td>
                     <td data-label="舒張壓"><input type="number" class="bp-input" name="noon_diastolic" step="1" min="30" max="150" title="輸入中午舒張壓"></td>
                     <td data-label="脈搏"><input type="number" class="bp-input" name="noon_pulse" step="1" min="30" max="200" title="輸入中午脈搏"></td>
-                    <td><button type="button" onclick="submitBPSlot('noon')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="晚上">晚上</td>
                     <td data-label="收縮壓"><input type="number" class="bp-input" name="evening_systolic" step="1" min="50" max="250" title="輸入晚上收縮壓"></td>
                     <td data-label="舒張壓"><input type="number" class="bp-input" name="evening_diastolic" step="1" min="30" max="150" title="輸入晚上舒張壓"></td>
                     <td data-label="脈搏"><input type="number" class="bp-input" name="evening_pulse" step="1" min="30" max="200" title="輸入晚上脈搏"></td>
-                    <td><button type="button" onclick="submitBPSlot('evening')">📄 儲存</button></td>
                 </tr>
             </tbody>
         </table>
+        <button type="button" onclick="submitAllBPData()">📄 儲存本日血壓紀錄</button>
         <div class="number-pad" id="bp-number-pad">
-            <button class="number-button">1</button>
-            <button class="number-button">2</button>
-            <button class="number-button">3</button>
-            <button class="number-button">4</button>
-            <button class="number-button">5</button>
-            <button class="number-button">6</button>
-            <button class="number-button">7</button>
-            <button class="number-button">8</button>
-            <button class="number-button">9</button>
-            <button class="number-button">0</button>
-            <button class="number-button">C</button>
-            <button class="number-button">OK</button>
+            <button class="number-button">1</button><button class="number-button">2</button><button class="number-button">3</button>
+            <button class="number-button">4</button><button class="number-button">5</button><button class="number-button">6</button>
+            <button class="number-button">7</button><button class="number-button">8</button><button class="number-button">9</button>
+            <button class="number-button">0</button><button class="number-button">C</button><button class="number-button">OK</button>
         </div>
         <div id="bp_status" class="health-status"></div>
         <div id="bp-summary-status" class="mt-3"></div>
@@ -372,7 +333,6 @@
                     <th>時段</th>
                     <th>空腹 (mg/dL)</th>
                     <th>餐後 (mg/dL)</th>
-                    <th>操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -380,35 +340,25 @@
                     <td data-label="早餐">早餐</td>
                     <td data-label="空腹"><input type="number" class="sugar-input" name="morning_fasting" step="1" min="50" max="300" title="輸入早餐前血糖"></td>
                     <td data-label="餐後"><input type="number" class="sugar-input" name="morning_postprandial" step="1" min="70" max="400" title="輸入早餐後血糖"></td>
-                    <td><button type="button" onclick="submitBSSlot('morning')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="午餐">午餐</td>
                     <td data-label="空腹"><input type="number" class="sugar-input" name="noon_fasting" step="1" min="50" max="300" title="輸入午餐前血糖"></td>
                     <td data-label="餐後"><input type="number" class="sugar-input" name="noon_postprandial" step="1" min="70" max="400" title="輸入午餐後血糖"></td>
-                    <td><button type="button" onclick="submitBSSlot('noon')">📄 儲存</button></td>
                 </tr>
                 <tr>
                     <td data-label="晚餐">晚餐</td>
                     <td data-label="空腹"><input type="number" class="sugar-input" name="evening_fasting" step="1" min="50" max="300" title="輸入晚餐前血糖"></td>
                     <td data-label="餐後"><input type="number" class="sugar-input" name="evening_postprandial" step="1" min="70" max="400" title="輸入晚餐後血糖"></td>
-                    <td><button type="button" onclick="submitBSSlot('evening')">📄 儲存</button></td>
                 </tr>
             </tbody>
         </table>
+        <button type="button" onclick="submitAllBSData()">📄 儲存本日血糖紀錄</button>
         <div class="number-pad" id="bs-number-pad">
-            <button class="number-button">1</button>
-            <button class="number-button">2</button>
-            <button class="number-button">3</button>
-            <button class="number-button">4</button>
-            <button class="number-button">5</button>
-            <button class="number-button">6</button>
-            <button class="number-button">7</button>
-            <button class="number-button">8</button>
-            <button class="number-button">9</button>
-            <button class="number-button">0</button>
-            <button class="number-button">C</button>
-            <button class="number-button">OK</button>
+            <button class="number-button">1</button><button class="number-button">2</button><button class="number-button">3</button>
+            <button class="number-button">4</button><button class="number-button">5</button><button class="number-button">6</button>
+            <button class="number-button">7</button><button class="number-button">8</button><button class="number-button">9</button>
+            <button class="number-button">0</button><button class="number-button">C</button><button class="number-button">OK</button>
         </div>
         <div id="bs_status" class="health-status"></div>
         <div id="sugar-summary-status" class="mt-3"></div>
@@ -418,25 +368,6 @@
     <button class="collapsible">📈 健康趨勢分析</button>
     <div class="content">
         <h2>📈 健康趨勢分析</h2>
-        <form id="trend-form-upload" enctype="multipart/form-data">
-            <h4>透過上傳檔案分析：</h4>
-            <label for="trend-file">📂 上傳照護紀錄（CSV）：</label>
-            <input type="file" id="trend-file" name="file" accept=".csv">
-            <label for="data-type-upload">📊 選擇分析數據類型：</label>
-            <select id="data-type-upload" name="data_type">
-                <option value="blood_pressure">血壓數據</option>
-                <option value="blood_sugar">血糖數據</option>
-            </select>
-            <label for="time-period-upload">🕒 選擇分析時間範圍：</label>
-            <select id="time-period-upload" name="time_period">
-                <option value="today">當日</option>
-                <option value="7days" selected>最近 7 天</option>
-                <option value="30days">最近 30 天</option>
-                <option value="all">所有歷史數據</option>
-            </select>
-            <button type="submit">🔍 分析上傳檔案趨勢</button>
-        </form>
-        <hr>
         <div>
             <h4>使用已儲存的帳戶數據進行分析：</h4>
             <label for="time-period-account">🕒 選擇分析時間範圍：</label>
@@ -455,10 +386,9 @@
             <button type="button" id="analyze-account-data-btn">🔍 分析帳戶數據趨勢</button>
         </div>
         <div id="trend-status"></div>
-        <div id="trend-output-plotly" style="width:100%; height:400px;"></div> {# New div for Plotly chart #}
+        <div id="trend-output-plotly" style="width:100%; height:400px;"></div>
         <div id="trend-output"></div>
-        <div id="trend-download"></div>
-        <div id="report-download"></div>
+        <div id="download-buttons"></div>
     </div>
 
     <!-- Report Generation Section -->
@@ -514,50 +444,55 @@
     {% if current_user.is_authenticated %}
     const socket = io();
 
-    // Initialize date fields and load today's data
+    function loadHealthDataForDate(date) {
+        fetch(`/api/get_health_data_for_date?date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                ['morning', 'noon', 'evening'].forEach(timeSlot => {
+                    document.querySelector(`input[name="${timeSlot}_systolic"]`).value = data[`${timeSlot}_systolic`] || '';
+                    document.querySelector(`input[name="${timeSlot}_diastolic"]`).value = data[`${timeSlot}_diastolic`] || '';
+                    document.querySelector(`input[name="${timeSlot}_pulse"]`).value = data[`${timeSlot}_pulse`] || '';
+                    document.querySelector(`input[name="${timeSlot}_fasting"]`).value = data[`${timeSlot}_fasting`] || '';
+                    document.querySelector(`input[name="${timeSlot}_postprandial"]`).value = data[`${timeSlot}_postprandial`] || '';
+                });
+                updateStatuses();
+            })
+            .catch(error => console.error(`Error loading health data for ${date}:`, error));
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date().toISOString().split('T')[0];
         const bpDateElem = document.getElementById('bp-date');
         const sugarDateElem = document.getElementById('sugar-date');
+        
         if (bpDateElem) bpDateElem.value = today;
         if (sugarDateElem) sugarDateElem.value = today;
 
-        // Load today's health data
-        fetch('/api/get_today_health_data')
-            .then(response => response.json())
-            .then(data => {
-                // Populate BP inputs
-                const bpRows = document.querySelectorAll('#bp-table tbody tr');
-                bpRows.forEach((row, index) => {
-                    const timeSlot = ['morning', 'noon', 'evening'][index];
-                    row.querySelector(`input[name="${timeSlot}_systolic"]`).value = data[`${timeSlot}_systolic`] || '';
-                    row.querySelector(`input[name="${timeSlot}_diastolic"]`).value = data[`${timeSlot}_diastolic`] || '';
-                    row.querySelector(`input[name="${timeSlot}_pulse"]`).value = data[`${timeSlot}_pulse`] || '';
-                });
+        loadHealthDataForDate(today);
 
-                // Populate Sugar inputs
-                const sugarRows = document.querySelectorAll('#sugar-table tbody tr');
-                sugarRows.forEach((row, index) => {
-                    const timeSlot = ['morning', 'noon', 'evening'][index];
-                    row.querySelector(`input[name="${timeSlot}_fasting"]`).value = data[`${timeSlot}_fasting`] || '';
-                    row.querySelector(`input[name="${timeSlot}_postprandial"]`).value = data[`${timeSlot}_postprandial`] || '';
-                });
-
-                updateStatuses();
-            })
-            .catch(error => console.error('Error loading today\'s health data:', error));
+        if (bpDateElem) {
+            bpDateElem.addEventListener('change', (event) => {
+                const newDate = event.target.value;
+                if (sugarDateElem) sugarDateElem.value = newDate;
+                loadHealthDataForDate(newDate);
+            });
+        }
+        if (sugarDateElem) {
+            sugarDateElem.addEventListener('change', (event) => {
+                const newDate = event.target.value;
+                if (bpDateElem) bpDateElem.value = newDate;
+                loadHealthDataForDate(newDate);
+            });
+        }
     });
 
-    // Collapsible sections
     document.querySelectorAll('.collapsible').forEach(button => {
         button.addEventListener('click', function() {
             this.classList.toggle('active');
-            const content = this.nextElementSibling;
-            content.style.display = content.style.display === 'block' ? 'none' : 'block';
+            this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block';
         });
     });
 
-    // Numeric keypad functionality
     let activeInput = null;
     const bpNumberPad = document.getElementById('bp-number-pad');
     const bsNumberPad = document.getElementById('bs-number-pad');
@@ -566,11 +501,7 @@
 
     document.querySelectorAll('.bp-input, .sugar-input').forEach(input => {
         input.addEventListener('focus', function(e) {
-            if (isMobile) {
-                bpNumberPad.style.display = 'none';
-                bsNumberPad.style.display = 'none';
-                return;
-            }
+            if (isMobile) return;
             activeInput = this;
             const numberPad = this.classList.contains('bp-input') ? bpNumberPad : bsNumberPad;
             const rect = this.getBoundingClientRect();
@@ -597,13 +528,12 @@
                     if (activeInput) {
                         if (!isNaN(parseInt(buttonValue)) && buttonValue.length === 1) {
                             activeInput.value += buttonValue;
-                            activeInput.dispatchEvent(new Event('change'));
                         } else if (buttonValue === 'C') {
                             activeInput.value = '';
-                            activeInput.dispatchEvent(new Event('change'));
                         } else if (buttonValue === 'OK') {
                             validateAndCloseNumberPad();
                         }
+                        activeInput.dispatchEvent(new Event('change'));
                     }
                 });
             });
@@ -633,9 +563,9 @@
         activeInput = null;
     }
 
-    // Validate time slot inputs
-    function validateTimeSlotInputs(inputs) {
+    function validateTableInputs(tableId) {
         let hasData = false;
+        const inputs = document.querySelectorAll(`#${tableId} input[type="number"]`);
         for (let input of inputs) {
             if (input.value) {
                 hasData = true;
@@ -657,93 +587,24 @@
         return true;
     }
 
-    // Status checking
     async function checkBPStatus(systolic, diastolic) {
         if (!systolic || !diastolic) return { status: '無資料', advice: '請輸入收縮壓和舒張壓以檢查狀態。' };
-        try {
-            const response = await fetch('/api/check_bp_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ systolic, diastolic })
-            });
-            if (!response.ok) {
-                throw new Error(`伺服器錯誤: ${response.statusText}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('檢查血壓狀態失敗:', error);
-            // 後備邏輯（模擬 API）
-            const sys = parseFloat(systolic);
-            const dia = parseFloat(diastolic);
-            let status = '無效';
-            let advice = '無法判斷血壓狀態，請檢查輸入值。';
-            if (50 <= sys && sys <= 250 && 30 <= dia && dia <= 150) {
-                if (sys < 120 && dia < 80) {
-                    status = '正常';
-                    advice = '血壓正常，請繼續保持健康生活方式。';
-                } else if (sys >= 180 || dia >= 120) {
-                    status = '高血壓危象';
-                    advice = '⚠️ 血壓極高，請立即就醫！';
-                } else if (sys >= 140 || dia >= 90) {
-                    status = '高血壓第二期';
-                    advice = '⚠️ 高血壓，建議諮詢醫生並調整生活方式。';
-                } else if (sys >= 130 || dia >= 80) {
-                    status = '高血壓第一期';
-                    advice = '⚠️ 輕度高血壓，建議定期監測血壓。';
-                } else if (sys >= 120 && dia < 80) {
-                    status = '血壓偏高';
-                    advice = '⚠️ 血壓偏高，建議減少鹽分攝入並增加運動。';
-                }
-            }
-            return { status, advice: `API 不可用，採用本地檢查：${advice}` };
-        }
+        const response = await fetch('/api/check_bp_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ systolic, diastolic })
+        });
+        return response.json();
     }
 
     async function checkBSStatus(value, type) {
         if (!value) return { status: '無資料', advice: `請輸入${type === 'fasting' ? '空腹' : '餐後'}血糖以檢查狀態。` };
-        try {
-            const response = await fetch('/api/check_bs_status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ value, type })
-            });
-            if (!response.ok) {
-                throw new Error(`伺服器錯誤: ${response.statusText}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('檢查血糖狀態失敗:', error);
-            // 後備邏輯（模擬 API）
-            const val = parseFloat(value);
-            let status = '無效';
-            let advice = '無法判斷血糖狀態，請檢查輸入值。';
-            if (50 <= val && val <= 400) {
-                if (type === 'fasting') {
-                    if (val < 100) {
-                        status = '正常';
-                        advice = '空腹血糖正常，請繼續保持健康飲食。';
-                    } else if (val <= 125) {
-                        status = '糖尿病前期';
-                        advice = '⚠️ 空腹血糖偏高，建議諮詢醫生並調整飲食。';
-                    } else {
-                        status = '糖尿病';
-                        advice = '⚠️ 空腹血糖過高，請諮詢醫生進行進一步檢查。';
-                    }
-                } else if (type === 'postprandial') {
-                    if (val < 140) {
-                        status = '正常';
-                        advice = '餐後血糖正常，請繼續保持健康生活方式。';
-                    } else if (val <= 199) {
-                        status = '糖尿病前期';
-                        advice = '⚠️ 餐後血糖偏高，建議控制飲食並增加運動。';
-                    } else {
-                        status = '糖尿病';
-                        advice = '⚠️ 餐後血糖過高，請諮詢醫生進行進一步檢查。';
-                    }
-                }
-            }
-            return { status, advice: `API 不可用，採用本地檢查：${advice}` };
-        }
+        const response = await fetch('/api/check_bs_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value, type })
+        });
+        return response.json();
     }
 
     async function updateStatuses() {
@@ -756,7 +617,9 @@
             const diastolic = parseFloat(row.querySelector(`input[name="${timeSlot}_diastolic"]`).value) || 0;
             if (systolic && diastolic) {
                 const result = await checkBPStatus(systolic, diastolic);
-                bpStatusHtml += `${timeSlot === 'morning' ? '早上' : timeSlot === 'noon' ? '中午' : '晚上'}：<span class="${result.status.toLowerCase().replace(/\s/g, '')}">${result.status}</span> - ${result.advice}<br>`;
+                const statusClass = result.status.replace(/\s+/g, '-').replace(/[()]/g, '');
+                const timeLabel = timeSlot === 'morning' ? '早上' : timeSlot === 'noon' ? '中午' : '晚上';
+                bpStatusHtml += `<div class="health-status-item status-${statusClass}"><div><strong>${timeLabel} ${result.status}</strong><br><small>${result.advice}</small></div></div>`;
             }
         }
         document.getElementById('bp_status').innerHTML = bpStatusHtml || '無血壓數據可顯示。';
@@ -768,13 +631,16 @@
             const timeSlot = ['morning', 'noon', 'evening'][i];
             const fasting = parseFloat(row.querySelector(`input[name="${timeSlot}_fasting"]`).value) || 0;
             const postprandial = parseFloat(row.querySelector(`input[name="${timeSlot}_postprandial"]`).value) || 0;
+            const mealLabel = timeSlot === 'morning' ? '早餐' : timeSlot === 'noon' ? '午餐' : '晚餐';
             if (fasting) {
                 const result = await checkBSStatus(fasting, 'fasting');
-                bsStatusHtml += `${timeSlot === 'morning' ? '早餐' : timeSlot === 'noon' ? '午餐' : '晚餐'} 空腹：<span class="${result.status.toLowerCase().replace(/\s/g, '')}">${result.status}</span> - ${result.advice}<br>`;
+                const statusClass = result.status.replace(/\s+/g, '-').replace(/[()]/g, '');
+                bsStatusHtml += `<div class="health-status-item status-${statusClass}"><div><strong>${mealLabel}空腹 ${result.status}</strong><br><small>${result.advice}</small></div></div>`;
             }
             if (postprandial) {
                 const result = await checkBSStatus(postprandial, 'postprandial');
-                bsStatusHtml += `${timeSlot === 'morning' ? '早餐' : timeSlot === 'noon' ? '午餐' : '晚餐'} 餐後：<span class="${result.status.toLowerCase().replace(/\s/g, '')}">${result.status}</span> - ${result.advice}<br>`;
+                const statusClass = result.status.replace(/\s+/g, '-').replace(/[()]/g, '');
+                bsStatusHtml += `<div class="health-status-item status-${statusClass}"><div><strong>${mealLabel}餐後 ${result.status}</strong><br><small>${result.advice}</small></div></div>`;
             }
         }
         document.getElementById('bs_status').innerHTML = bsStatusHtml || '無血糖數據可顯示。';
@@ -784,302 +650,150 @@
         input.addEventListener('change', updateStatuses);
     });
 
-    // Submit blood pressure time slot
-    async function submitBPSlot(timeSlot) {
+    async function submitAllBPData() {
         const bpDateInput = document.getElementById('bp-date');
         const date = bpDateInput.value;
-        if (!date) {
-            alert('請選擇日期');
-            return;
-        }
-        const row = Array.from(document.querySelectorAll('#bp-table tbody tr'))[['morning', 'noon', 'evening'].indexOf(timeSlot)];
-        const inputs = row.querySelectorAll('.bp-input');
-        if (!validateTimeSlotInputs(inputs)) return;
-
+        if (!date) { alert('請選擇日期'); return; }
+        if (!validateTableInputs('bp-table')) return;
         const formData = new FormData();
         formData.append('date', date);
-        formData.append(`${timeSlot}_systolic`, row.querySelector(`input[name="${timeSlot}_systolic"]`).value.trim() || '');
-        formData.append(`${timeSlot}_diastolic`, row.querySelector(`input[name="${timeSlot}_diastolic"]`).value.trim() || '');
-        formData.append(`${timeSlot}_pulse`, row.querySelector(`input[name="${timeSlot}_pulse"]`).value.trim() || '');
-
+        document.querySelectorAll('#bp-table .bp-input').forEach(input => formData.append(input.name, input.value.trim() || ''));
         try {
             const response = await fetch('/save_health_data', { method: 'POST', body: formData });
-            let result;
-            if (!response.ok) {
-                const text = await response.text();
-                try {
-                    result = JSON.parse(text);
-                } catch {
-                    throw new Error(text || response.statusText);
-                }
-                throw new Error(result.message || response.statusText);
-            }
-            result = await response.json();
-            const bpStatus = document.getElementById('bp-summary-status');
-            if (bpStatus) {
-                bpStatus.innerHTML += `<p class="status-success">🟢 ${result.message}</p>`;
-                bpStatus.scrollTop = bpStatus.scrollHeight;
-            }
-            // Reload today's data
-            fetch('/api/get_today_health_data')
-                .then(response => response.json())
-                .then(data => {
-                    const bpRows = document.querySelectorAll('#bp-table tbody tr');
-                    bpRows.forEach((row, index) => {
-                        const slot = ['morning', 'noon', 'evening'][index];
-                        row.querySelector(`input[name="${slot}_systolic"]`).value = data[`${slot}_systolic`] || '';
-                        row.querySelector(`input[name="${slot}_diastolic"]`).value = data[`${slot}_diastolic`] || '';
-                        row.querySelector(`input[name="${slot}_pulse"]`).value = data[`${slot}_pulse`] || '';
-                    });
-                    updateStatuses();
-                })
-                .catch(error => console.error('Error reloading today\'s health data:', error));
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
+            document.getElementById('bp-summary-status').innerHTML += `<p class="status-success">🟢 ${result.message}</p>`;
         } catch (error) {
-            const bpStatus = document.getElementById('bp-summary-status');
-            if (bpStatus) {
-                bpStatus.innerHTML += `<p class="status-error">❌ 儲存血壓紀錄失敗: ${error.message}</p>`;
-                bpStatus.scrollTop = bpStatus.scrollHeight;
-            }
+            document.getElementById('bp-summary-status').innerHTML += `<p class="status-error">❌ 儲存血壓紀錄失敗: ${error.message}</p>`;
         }
     }
 
-    // Submit blood sugar time slot
-    async function submitBSSlot(timeSlot) {
+    async function submitAllBSData() {
         const bsDateInput = document.getElementById('sugar-date');
         const date = bsDateInput.value;
-        if (!date) {
-            alert('請選擇日期');
-            return;
-        }
-        const row = Array.from(document.querySelectorAll('#sugar-table tbody tr'))[['morning', 'noon', 'evening'].indexOf(timeSlot)];
-        const inputs = row.querySelectorAll('.sugar-input');
-        if (!validateTimeSlotInputs(inputs)) return;
-
+        if (!date) { alert('請選擇日期'); return; }
+        if (!validateTableInputs('sugar-table')) return;
         const formData = new FormData();
         formData.append('date', date);
-        formData.append(`${timeSlot}_fasting`, row.querySelector(`input[name="${timeSlot}_fasting"]`).value.trim() || '');
-        formData.append(`${timeSlot}_postprandial`, row.querySelector(`input[name="${timeSlot}_postprandial"]`).value.trim() || '');
-
+        document.querySelectorAll('#sugar-table .sugar-input').forEach(input => formData.append(input.name, input.value.trim() || ''));
         try {
             const response = await fetch('/save_health_data', { method: 'POST', body: formData });
-            let result;
-            if (!response.ok) {
-                const text = await response.text();
-                try {
-                    result = JSON.parse(text);
-                } catch {
-                    throw new Error(text || response.statusText);
-                }
-                throw new Error(result.message || response.statusText);
-            }
-            result = await response.json();
-            const sugarStatus = document.getElementById('sugar-summary-status');
-            if (sugarStatus) {
-                sugarStatus.innerHTML += `<p class="status-success">🟢 ${result.message}</p>`;
-                sugarStatus.scrollTop = sugarStatus.scrollHeight;
-            }
-            // Reload today's data
-            fetch('/api/get_today_health_data')
-                .then(response => response.json())
-                .then(data => {
-                    const sugarRows = document.querySelectorAll('#sugar-table tbody tr');
-                    sugarRows.forEach((row, index) => {
-                        const slot = ['morning', 'noon', 'evening'][index];
-                        row.querySelector(`input[name="${slot}_fasting"]`).value = data[`${slot}_fasting`] || '';
-                        row.querySelector(`input[name="${slot}_postprandial"]`).value = data[`${slot}_postprandial`] || '';
-                    });
-                    updateStatuses();
-                })
-                .catch(error => console.error('Error reloading today\'s health data:', error));
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message);
+            document.getElementById('sugar-summary-status').innerHTML += `<p class="status-success">🟢 ${result.message}</p>`;
         } catch (error) {
-            const sugarStatus = document.getElementById('sugar-summary-status');
-            if (sugarStatus) {
-                sugarStatus.innerHTML += `<p class="status-error">❌ 儲存血糖紀錄失敗: ${error.message}</p>`;
-                sugarStatus.scrollTop = sugarStatus.scrollHeight;
-            }
+            document.getElementById('sugar-summary-status').innerHTML += `<p class="status-error">❌ 儲存血糖紀錄失敗: ${error.message}</p>`;
         }
     }
 
-    // Socket.IO events
     socket.on('update', function(data) {
-        const statusDivId = data.event_type === 'summary' ? 
-                           (data.message.includes('血壓') || data.message.includes('血糖') ? 'bp-summary-status' : 'sugar-summary-status') : // Simplified logic
-                           data.event_type === 'trend' ? 'trend-status' :
-                           data.event_type === 'report' ? 'trend-status' : // Report status also goes to trend-status
-                           'question-status';
+        const statusDivId = data.event_type === 'summary' ? (data.message.includes('血壓') ? 'bp-summary-status' : 'sugar-summary-status') : 'trend-status';
         const statusDiv = document.getElementById(statusDivId);
         if (statusDiv) {
-            const statusClass = data.message.includes('❌') || data.message.includes('⚠️') ? 'status-error' : 'status-success';
             const p = document.createElement('p');
-            p.className = statusClass;
+            p.className = data.message.includes('❌') ? 'status-error' : 'status-success';
             p.textContent = data.message;
             statusDiv.appendChild(p);
             statusDiv.scrollTop = statusDiv.scrollHeight;
         }
     });
 
-    socket.on('trend_result', function(data) {
-        if (data.event_type === 'trend') {
-            const trendStatus = document.getElementById('trend-status');
-            const trendOutput = document.getElementById('trend-output');
-            const trendDownload = document.getElementById('trend-download');
-            const reportDownload = document.getElementById('report-download');
-            if (trendStatus) {
-                trendStatus.innerHTML += `<p class="status-success">🟢 ${data.message}</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
-            }
-            if (trendOutput && data.trend_output_text) { // Changed from data.trend_output
-                trendOutput.innerHTML = data.trend_output_text.replace(/\n/g, '<br>');
-            }
-            if (trendDownload && data.trend_url) {
-                trendDownload.innerHTML = `<a href="${data.trend_url}" class="download-btn" target="_blank">📊 下載趨勢圖</a>`;
-            } else {
-                trendDownload.innerHTML = ''; // Clear if no URL
-            }
-            if (reportDownload && data.pdf_url) {
-                reportDownload.innerHTML = `<a href="${data.pdf_url}" class="download-btn" target="_blank" style="margin-left: 10px;">📄 下載趨勢分析PDF報告</a>`;
-            } else {
-                reportDownload.innerHTML = ''; // Clear if no URL
-            }
-            const plotlyDiv = document.getElementById('trend-output-plotly');
-            if (plotlyDiv && data.plot_data) {
-                Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
-            } else if (plotlyDiv) {
-                Plotly.purge('trend-output-plotly');
-            }
-        }
-    });
-
-    socket.on('question_result', function(data) {
-        if (data.event_type === 'question') {
-            const questionOutput = document.getElementById('question-output');
-            if (questionOutput) questionOutput.innerHTML = data.answer.replace(/\n/g, '<br>');
-        }
-    });
-
-    // Trend analysis (uploaded file)
-    const trendFormUpload = document.getElementById('trend-form-upload');
-    if (trendFormUpload) {
-        trendFormUpload.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            const trendFileInput = document.getElementById('trend-file');
-            const dataTypeInput = document.getElementById('data-type-upload');
-            const timePeriodInput = document.getElementById('time-period-upload');
-            const trendStatus = document.getElementById('trend-status');
-
-            if (!trendFileInput.files[0]) {
-                trendStatus.innerHTML += `<p class="status-error">❌ 請選擇一個 CSV 檔案進行上傳分析</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
-                return;
-            }
-            if (!dataTypeInput.value) {
-                trendStatus.innerHTML += `<p class="status-error">❌ 請選擇數據類型</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
-                return;
-            }
-            if (!timePeriodInput.value) {
-                trendStatus.innerHTML += `<p class="status-error">❌ 請選擇時間範圍</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
-                return;
-            }
-
-            try {
-                const response = await fetch('/upload_trend', {
-                    method: 'POST',
-                    body: formData
-                });
-                let data;
-                if (!response.ok) {
-                    const text = await response.text();
-                    try {
-                        data = JSON.parse(text);
-                        throw new Error(data.message || response.statusText);
-                    } catch (e) {
-                        throw new Error(`伺服器錯誤: ${response.statusText}. 詳細資訊: ${text}`);
-                    }
-                }
-                data = await response.json();
-                if (data.success) {
-                    trendStatus.innerHTML += `<p class="status-success">🟢 ${data.message}</p>`;
-                    trendStatus.scrollTop = trendStatus.scrollHeight;
-                    const plotlyDiv = document.getElementById('trend-output-plotly');
-                    if (plotlyDiv && data.plot_data) {
-                        Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
-                    } else if (plotlyDiv) {
-                        Plotly.purge('trend-output-plotly');
-                    }
-                    document.getElementById('trend-output').innerHTML = data.trend_output_text || "無分析結果。";
-                    document.getElementById('trend-download').innerHTML = data.trend_url ? `<a href="${data.trend_url}" class="download-btn" target="_blank">📊 下載趨勢圖</a>` : '';
-                    document.getElementById('report-download').innerHTML = data.pdf_url ? `<a href="${data.pdf_url}" class="download-btn" target="_blank" style="margin-left: 10px;">📄 下載趨勢分析PDF報告</a>` : '';
-                } else {
-                    throw new Error(data.message);
-                }
-            } catch (error) {
-                trendStatus.innerHTML += `<p class="status-error">❌ 上傳趨勢檔案失敗: ${error.message}</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
-            }
-        });
-    }
-
-    // Trend analysis (account data)
     const analyzeAccountDataBtn = document.getElementById('analyze-account-data-btn');
     if (analyzeAccountDataBtn) {
         analyzeAccountDataBtn.addEventListener('click', async function() {
             const timePeriod = document.getElementById('time-period-account').value;
             const dataType = document.getElementById('data-type-account').value;
-            const userIdToAnalyze = document.getElementById('user-id-to-analyze-input').value;
             const trendStatus = document.getElementById('trend-status');
+            
+            document.getElementById('trend-output').innerHTML = '';
+            document.getElementById('download-buttons').innerHTML = '';
+            Plotly.purge('trend-output-plotly');
+            trendStatus.innerHTML = '<p>正在分析數據，請稍候...</p>';
 
             const formData = new FormData();
             formData.append('time_period', timePeriod);
             formData.append('data_type', dataType);
-            formData.append('user_id_to_analyze', userIdToAnalyze);
 
             try {
                 const response = await fetch('/analyze_account_trend', { method: 'POST', body: formData });
-                let data;
-                if (!response.ok) {
-                    const text = await response.text();
-                    try {
-                        data = JSON.parse(text);
-                        throw new Error(data.message || response.statusText);
-                    } catch (e) {
-                        throw new Error(`伺服器錯誤: ${response.statusText}. 詳細資訊: ${text}`);
-                    }
-                }
-                data = await response.json();
+                const data = await response.json();
                 if (data.success) {
-                    trendStatus.innerHTML += `<p class="status-success">🟢 ${data.message}</p>`;
-                    trendStatus.scrollTop = trendStatus.scrollHeight;
+                    trendStatus.innerHTML = `<p class="status-success">🟢 ${data.message}</p>`;
                     const plotlyDiv = document.getElementById('trend-output-plotly');
-                    if (plotlyDiv && data.plot_data) {
+                    if (plotlyDiv && data.plot_data && data.plot_data.data.length > 0) {
                         Plotly.newPlot('trend-output-plotly', data.plot_data.data, data.plot_data.layout);
-                    } else if (plotlyDiv) {
-                        Plotly.purge('trend-output-plotly');
+                    } else {
+                        plotlyDiv.innerHTML = '<p>沒有足夠的數據來繪製趨勢圖。</p>';
                     }
-                    document.getElementById('trend-output').innerHTML = data.trend_output_text || "無分析結果。";
-                    document.getElementById('trend-download').innerHTML = data.trend_url ? `<a href="${data.trend_url}" class="download-btn" target="_blank">📊 下載趨勢圖</a>` : '';
-                    document.getElementById('report-download').innerHTML = data.pdf_url ? `<a href="${data.pdf_url}" class="download-btn" target="_blank" style="margin-left: 10px;">📄 下載趨勢分析PDF報告</a>` : '';
+                    document.getElementById('trend-output').innerHTML = data.trend_output_text.replace(/\n/g, '<br>') || "無分析結果。";
+                    
+                    const downloadContainer = document.getElementById('download-buttons');
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'download-btn';
+                    downloadBtn.innerHTML = '📄 下載分析報告 (PDF)';
+                    downloadBtn.onclick = () => downloadPdfReport(data.report_params);
+                    downloadContainer.appendChild(downloadBtn);
+
                 } else {
                     throw new Error(data.message);
                 }
             } catch (error) {
-                trendStatus.innerHTML += `<p class="status-error">❌ 分析帳戶數據趨勢失敗: ${error.message}</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
+                trendStatus.innerHTML = `<p class="status-error">❌ 分析帳戶數據趨勢失敗: ${error.message}</p>`;
             }
         });
     }
 
-    // Report generation
+    async function downloadPdfReport(params) {
+        const downloadBtn = document.querySelector('#download-buttons button');
+        const originalText = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = '🔄 正在生成報告...';
+        downloadBtn.disabled = true;
+
+        try {
+            const response = await fetch('/download_report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(params)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `伺服器錯誤: ${response.statusText}`);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = `health_report_${new Date().toISOString().slice(0,10)}.pdf`;
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                    filename = decodeURIComponent(matches[1].replace(/['"]/g, ''));
+                }
+            }
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+
+        } catch (error) {
+            alert(`下載 PDF 報告失敗: ${error.message}`);
+        } finally {
+            downloadBtn.innerHTML = originalText;
+            downloadBtn.disabled = false;
+        }
+    }
+
     async function generateAndSendReport() {
         const email = document.getElementById('email').value;
         const period = document.getElementById('report_period').value;
         const data_type = document.getElementById('report_data_type').value;
-        if (!email) {
-            alert('請輸入電子郵件');
-            return;
-        }
+        if (!email) { alert('請輸入電子郵件'); return; }
         try {
             const response = await fetch('/generate_and_send_report', {
                 method: 'POST',
@@ -1090,14 +804,11 @@
             const trendStatus = document.getElementById('trend-status');
             if (result.success) {
                 trendStatus.innerHTML += `<p class="status-success">🟢 ${result.message}</p>`;
-                trendStatus.scrollTop = trendStatus.scrollHeight;
             } else {
                 throw new Error(result.message);
             }
         } catch (error) {
-            const trendStatus = document.getElementById('trend-status');
-            trendStatus.innerHTML += `<p class="status-error">❌ 寄送報告失敗: ${error.message}</p>`;
-            trendStatus.scrollTop = trendStatus.scrollHeight;
+            document.getElementById('trend-status').innerHTML += `<p class="status-error">❌ 寄送報告失敗: ${error.message}</p>`;
         }
     }
     {% endif %}
