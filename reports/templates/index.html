@@ -241,6 +241,27 @@
         .status-血壓偏低, .status-低血糖-空腹-, .status-低血糖-餐後- { background-color: #e2e3e5; color: #383d41; border-left-color: #6c757d; }
         .status-血壓偏低::before, .status-低血糖-空腹-::before, .status-低血糖-餐後-::before { content: '🔵'; }
         
+        /* Styles for the analysis output */
+        #trend-output {
+            background-color: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            line-height: 1.8;
+        }
+        #trend-output ul {
+            list-style-type: disc;
+            margin-left: 25px;
+            padding-left: 0;
+        }
+        #trend-output li {
+            margin-bottom: 0.5rem;
+        }
+        #trend-output p {
+            margin-bottom: 1rem;
+        }
+
         @media (max-width: 768px) {
             body { padding: 0.5rem; font-size: 16px; }
             table { display: block; overflow-x: auto; white-space: nowrap; }
@@ -725,7 +746,11 @@
                     } else {
                         plotlyDiv.innerHTML = '<p>沒有足夠的數據來繪製趨勢圖。</p>';
                     }
-                    document.getElementById('trend-output').innerHTML = data.trend_output_text.replace(/\n/g, '<br>') || "無分析結果。";
+                    
+                    // --- ✨ 核心修改開始 ✨ ---
+                    // 直接使用後端傳來的 HTML，不再需要 .replace()
+                    document.getElementById('trend-output').innerHTML = data.trend_output_html || "無分析結果。";
+                    // --- ✨ 核心修改結束 ✨ ---
                     
                     const downloadContainer = document.getElementById('download-buttons');
                     const downloadBtn = document.createElement('button');

@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import json
 import pickle
+import markdown # <--- 1. 確保導入 markdown
 
 from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -327,6 +328,11 @@ def analyze_account_trend():
         if "錯誤" in trend_output_text:
             return jsonify({'success': False, 'message': trend_output_text}), 500
 
+        # --- ✨ 核心修改開始 ✨ ---
+        # 2. 將 Markdown 文本轉換為 HTML
+        trend_output_html = markdown.markdown(trend_output_text)
+        # --- ✨ 核心修改結束 ✨ ---
+
         report_params = {
             "data_type": data_type,
             "time_period": time_period,
@@ -336,7 +342,8 @@ def analyze_account_trend():
         response_data = {
             'success': True,
             'message': '帳戶數據趨勢分析完成。',
-            'trend_output_text': trend_output_text,
+            # 3. 在 response 中使用轉換後的 HTML
+            'trend_output_html': trend_output_html, 
             'report_params': report_params,
             'plot_data': plotly_data
         }

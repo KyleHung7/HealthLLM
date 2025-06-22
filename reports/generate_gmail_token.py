@@ -1,48 +1,46 @@
-import os
-import json
+from __future__ import print_function
 import pickle
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+import os.path
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient import errors
 
-SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+# If modifying these scopes, delete the file token.pickle.
+SCOPES = ['https://mail.google.com/']
 
-TOKEN_PATH = 'token.pickle'
-CREDENTIALS_PATH = 'gmail_credential.json'
-
-def generate_token():
+def main():
+    """Shows basic usage of the PostmasterTools v1beta1 API.
+    Prints the visible domains on user's domain dashboard in https://postmaster.google.com/managedomains.
+    """
     creds = None
-    if os.path.exists(TOKEN_PATH):
-        try:
-            with open(TOKEN_PATH, 'rb') as token:
-                creds = pickle.load(token)
-        except (EOFError, pickle.PickleError) as e:
-            print(f"Error loading {TOKEN_PATH}: {e}. Re-authenticating...")
-            creds = None
-            if os.path.exists(TOKEN_PATH):
-                os.remove(TOKEN_PATH)
-
+    # The file token.pickle stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not os.path.exists(CREDENTIALS_PATH):
-                print(f"Error: Credentials file '{CREDENTIALS_PATH}' not found. Please ensure you have downloaded the JSON credentials from Google Cloud Console and named it '{CREDENTIALS_PATH}' in the project root.")
-                return
-
             flow = InstalledAppFlow.from_client_secrets_file(
-                CREDENTIALS_PATH, SCOPES
-            )
+                'gmail_credential.json', SCOPES)
             creds = flow.run_local_server(port=0)
-        
-        with open(TOKEN_PATH, 'wb') as token:
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
-    
-    print(f"Gmail API token successfully generated and stored to: {TOKEN_PATH}")
-    print("您現在可以使用 Flask 應用程式中的郵件發送功能了。")
-    return creds
+
+    service = build('gmailpostmastertools', 'v1beta1', credentials=creds)
+
+    domains = service.domains().list().execute()
+    if not domains:
+        print('No domains found.')
+    else:
+        print('Domains:')
+        for domain in domains['domains']:
+            print(domain)
 
 if __name__ == '__main__':
-    generate_token()
+  main()
