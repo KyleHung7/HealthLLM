@@ -125,7 +125,10 @@ def analyze_blood_pressure(systolic, diastolic, pulse=None):
     d = int(diastolic)
     status = "未知血壓狀態"
     advice = "請諮詢醫生以獲得專業評估。"
-    normal_range_info = f"理想血壓: 收縮壓 < 120 mmHg 且 舒張壓 < 80 mmHg。"
+    
+    # *** 根據您的要求修改此行 ***
+    normal_range_info = f"正常範圍： 收縮壓 < 120 mmHg，舒張壓 < 80 mmHg"
+    
     if s >= 180 or d >= 120:
         status = "高血壓危機"
         advice = "您的血壓非常高，這可能表示高血壓危機。請立即尋求醫療協助！"
@@ -137,7 +140,7 @@ def analyze_blood_pressure(systolic, diastolic, pulse=None):
         advice = "您的血壓處於第一期高血壓範圍，建議諮詢醫生討論生活方式改變，並定期監測。"
     elif (120 <= s <= 129) and d < 80:
         status = "血壓偏高"
-        advice = "您的血壓略高於理想範圍，建議開始注意健康生活方式，如健康飲食、規律運動和減輕壓力。"
+        advice = "您的血壓略高於正常範圍，建議開始注意健康生活方式，如健康飲食、規律運動和減輕壓力。"
     elif s < 120 and d < 80:
         if s < 90 or d < 60:
              status = "血壓偏低"
@@ -145,7 +148,7 @@ def analyze_blood_pressure(systolic, diastolic, pulse=None):
              normal_range_info = f"一般低血壓參考: 收縮壓 < 90 mmHg 或 舒張壓 < 60 mmHg。"
         else:
             status = "正常血壓"
-            advice = "您的血壓在理想範圍，請繼續保持健康的生活習慣。"
+            advice = "您的血壓在正常範圍，請繼續保持健康的生活習慣。"
     else:
         status = "血壓數據組合特殊"
         advice = "您的血壓數據組合較為特殊或不完整，建議諮詢醫生。"
@@ -166,13 +169,13 @@ def analyze_blood_sugar(value, measurement_type="fasting"):
     advice = "請諮詢醫生以獲得專業評估。"
     normal_range_info = ""
     if measurement_type.lower() == "fasting":
-        normal_range_info = f"理想空腹血糖: 70-99 mg/dL"
+        normal_range_info = f"正常空腹血糖: 70-99 mg/dL"
         if val <= 69:
             status = "低血糖 (空腹)"
             advice = f"您的空腹血糖 ({val} mg/dL) 偏低，可能為低血糖。若有不適請立即補充糖分並諮詢醫生。"
         elif val <= 99:
             status = "正常空腹血糖"
-            advice = f"您的空腹血糖 ({val} mg/dL) 在理想範圍。"
+            advice = f"您的空腹血糖 ({val} mg/dL) 在正常範圍。"
         elif 100 <= val <= 125:
             status = "糖尿病前期 (空腹)"
             advice = f"您的空腹血糖 ({val} mg/dL) 偏高，屬於糖尿病前期。建議改善飲食、增加運動，並定期追蹤血糖。"
@@ -180,13 +183,13 @@ def analyze_blood_sugar(value, measurement_type="fasting"):
             status = "糖尿病 (空腹)"
             advice = f"您的空腹血糖 ({val} mg/dL) 明顯偏高，可能已達糖尿病標準。請立即諮詢醫生進行進一步檢查和治療。"
     elif measurement_type.lower() == "postprandial":
-        normal_range_info = f"理想餐後血糖 (餐後2小時): < 140 mg/dL"
+        normal_range_info = f"正常餐後血糖 (餐後2小時): < 140 mg/dL"
         if val <= 69:
             status = "低血糖 (餐後)"
             advice = f"您的餐後血糖 ({val} mg/dL) 偏低，可能為低血糖。若有不適請立即補充糖分並諮詢醫生。"
         elif val <= 139:
             status = "正常餐後血糖"
-            advice = f"您的餐後血糖 ({val} mg/dL) 在理想範圍。"
+            advice = f"您的餐後血糖 ({val} mg/dL) 在正常範圍。"
         elif 140 <= val <= 199:
             status = "糖尿病前期 (餐後)"
             advice = f"您的餐後血糖 ({val} mg/dL) 偏高，屬於糖尿病前期。建議改善飲食、增加運動，並定期追蹤血糖。"
@@ -353,8 +356,6 @@ def generate_trend_report_pdf(
         print("錯誤：未設定 wkhtmltopdf。無法生成 PDF 報告。")
         return None, None
 
-    # *** THE FIX IS HERE ***
-    # Define the translation dictionary
     column_translation = {
         'Date': '日期',
         'Morning_Systolic': '早上收縮壓',
@@ -374,11 +375,9 @@ def generate_trend_report_pdf(
         'Evening_Postprandial': '晚間餐後血糖'
     }
 
-    # Create a copy for display and rename columns
     data_table_df_display = data_table_df.copy()
     data_table_df_display.rename(columns=column_translation, inplace=True)
     
-    # Fill NaN values and convert to HTML
     data_table_df_display = data_table_df_display.fillna('')
     data_table_html = data_table_df_display.to_html(index=False, border=0, classes="dataframe") if not data_table_df_display.empty else "<p>此期間無數據可顯示。</p>"
     
