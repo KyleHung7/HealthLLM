@@ -40,10 +40,10 @@
         .section {
             background: white;
             border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            padding: 2rem; /* Increased padding */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* Slightly stronger shadow */
             margin-bottom: 1.5rem;
-            max-width: 600px; /* Limit width for profile */
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
         }
@@ -52,17 +52,27 @@
             color: #2c7a7b;
             margin-bottom: 1.5rem;
             text-align: center;
+            font-size: 1.8rem; /* Adjusted size */
         }
 
         .profile-info p {
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-            line-height: 1.6;
+            margin-bottom: 1.2rem; /* Increased spacing */
+            font-size: 1.2rem; /* Larger font */
+            line-height: 1.7;
+            border-bottom: 1px solid #eef2f7; /* Subtle separator */
+            padding-bottom: 1.2rem;
+        }
+        
+        .profile-info p:last-child {
+            border-bottom: none; /* Remove border for the last item */
+            margin-bottom: 0;
         }
 
         .profile-info strong {
             color: #205e60;
             margin-right: 0.5rem;
+            display: inline-block;
+            width: 100px; /* Align labels */
         }
 
         .login-section {
@@ -96,76 +106,57 @@
             height: 1.5rem;
         }
 
-        .switch {
-          position: relative;
-          display: inline-block;
-          width: 60px;
-          height: 34px;
+        /* New styles for action buttons */
+        .action-buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem; /* Space between buttons */
+            margin-top: 2rem;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
         }
 
-        .switch input {
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: #ccc;
-          -webkit-transition: .4s;
-          transition: .4s;
-        }
-
-        .slider:before {
-          position: absolute;
-          content: "";
-          height: 26px;
-          width: 26px;
-          left: 4px;
-          bottom: 4px;
-          background-color: white;
-          -webkit-transition: .4s;
-          transition: .4s;
-        }
-
-        input:checked + .slider {
-          background-color: #2196F3;
-        }
-
-        input:focus + .slider {
-          box-shadow: 0 0 1px #2196F3;
-        }
-
-        input:checked + .slider:before {
-          -webkit-transform: translateX(26px);
-          -ms-transform: translateX(26px);
-          transform: translateX(26px);
-        }
-
-        /* Rounded sliders */
-        .slider.round {
-          border-radius: 34px;
-        }
-
-        .slider.round:before {
-          border-radius: 50%;
-        }
-
-        .onboarding-btn {
-            display: block;
-            margin: 15px auto;
-            text-align: center;
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(45deg, #2c7a7b, #3db2b4);
+            border: none;
+            border-radius: 10px;
             text-decoration: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            color: #fff;
+        }
+        
+        .action-btn .icon {
+            margin-right: 0.75rem;
+            font-size: 1.5rem;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             body {
-                padding: 0.5rem;
+                padding: 1rem;
+            }
+            .section {
+                padding: 1.5rem;
+            }
+            .action-buttons-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .action-btn {
+                width: 100%;
             }
         }
     </style>
@@ -179,28 +170,14 @@
         <div class="profile-info">
             <p><strong>姓名：</strong> {{ current_user.name }}</p>
             <p><strong>電子郵件：</strong> {{ current_user.email }}</p>
-            <p>
-                <strong>啟用自動 AI 功能：</strong>
-                <label class="switch">
-                    <input type="checkbox" id="ai_enabled" {% if ai_enabled %}checked{% endif %}>
-                    <span class="slider round"></span>
-                </label>
-            </p>
-            <p>
-                <strong>啟用郵件報告：</strong>
-                <label class="switch">
-                    <input type="checkbox" id="email_report_enabled" {% if email_report_enabled %}checked{% endif %}>
-                    <span class="slider round"></span>
-                </label>
-            </p>
-            <!-- Add more profile details here if needed -->
+            <!-- Removed AI and Email settings -->
         </div>
         
-        <div class="text-center mt-3">
-            <a href="{{ url_for('onboarding') }}" class="btn btn-outline-secondary btn-sm onboarding-btn">
+        <div class="action-buttons-container">
+            <a href="{{ url_for('onboarding') }}" class="action-btn">
                 重新設定角色
             </a>
-            <a href="/auth/binding" class="btn btn-outline-secondary btn-sm onboarding-btn">
+            <a href="/auth/binding" class="action-btn">
                 檢視帳號連結
             </a>
         </div>
@@ -210,7 +187,7 @@
         <h2>請先登入系統</h2>
         <p>您需要登入才能查看個人資料</p>
         <a href="/auth/login" class="login-btn">
-            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" style="border-radius: 50%;">
+            <img src="{{ url_for('static', filename='img/g-logo.png') }}" alt="Google Logo" style="border-radius: 50%;">
             使用 Google 帳號登入
         </a>
     </div>
@@ -218,52 +195,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     <script>
-        AOS.init({ duration: 1000, once: true });
-        const aiEnabledCheckbox = document.getElementById('ai_enabled');
-
-        aiEnabledCheckbox.addEventListener('change', function() {
-            const aiEnabled = this.checked;
-
-            fetch('/auth/save_ai_setting', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ ai_enabled: aiEnabled })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                console.log('AI setting saved successfully');
-            })
-            .catch(error => {
-                console.error('There was an error saving the AI setting:', error);
-            });
-        });
-
-        const emailReportEnabledCheckbox = document.getElementById('email_report_enabled');
-
-        emailReportEnabledCheckbox.addEventListener('change', function() {
-            const emailReportEnabled = this.checked;
-
-            fetch('/auth/save_email_report_setting', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email_report_enabled: emailReportEnabled })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                console.log('Email report setting saved successfully');
-            })
-            .catch(error => {
-                console.error('There was an error saving the email report setting:', error);
-            });
-        });
+        AOS.init({ duration: 800, once: true });
+        // Removed JavaScript for AI and Email settings as the elements are gone.
     </script>
 </body>
 </html>

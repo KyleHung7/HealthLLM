@@ -1,22 +1,28 @@
 import nh3
 import markdown
 import os
+import re
 
 def mdToHtml(text):
-  return nh3.clean(markdown.markdown(text))
+  html = markdown.markdown(text)
+  return nh3.clean(html)
+
+def strip_html_tags(html_text):
+  if not html_text:
+    return ""
+  clean = re.compile('<.*?>')
+  text = re.sub(clean, '', html_text)
+  text = text.replace(' ', ' ').replace('&', '&').replace('<', '<').replace('>', '>')
+  return text
 
 def clear_user_data_folder(user_id, folder_type):
-  # 定義資料夾的路徑
-  folder_path = f"static/{user_id}/{folder_type}"
-
-  # 確認資料夾是否存在
+  folder_path = f"static/users/{user_id}/{folder_type}"
   if os.path.exists(folder_path):
-    # 刪除 summary 資料夾中的所有檔案
     for filename in os.listdir(folder_path):
       file_path = os.path.join(folder_path, filename)
       try:
         if os.path.isfile(file_path) or os.path.islink(file_path):
-          os.unlink(file_path)  # 刪除檔案或符號鏈結
+          os.unlink(file_path)
       except Exception as e:
         print(f'Failed to delete {file_path}. Reason: {e}')
   else:
